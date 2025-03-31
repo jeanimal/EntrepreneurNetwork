@@ -17,7 +17,8 @@ import ProjectList from "@/components/ProjectList";
 import ResourceGrid from "@/components/ResourceGrid";
 import SkillsCard from "@/components/SkillsCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, Plus, User, Briefcase, MapPin, Mail, AtSign } from "lucide-react";
+import { FileUpload } from "@/components/ui/file-upload";
+import { Check, Plus, User, Briefcase, MapPin, Mail, AtSign, Camera } from "lucide-react";
 
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +27,8 @@ export default function Profile() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -115,6 +118,54 @@ export default function Profile() {
     }
     setIsEditing(false);
   };
+  
+  const handleAvatarSelected = (file: File) => {
+    setAvatarFile(file);
+  };
+  
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+    
+    try {
+      setIsUploadingAvatar(true);
+      
+      const formData = new FormData();
+      formData.append('avatar', avatarFile);
+      
+      // Make API request to upload avatar
+      const response = await fetch(`/api/users/${userId}/avatar`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload avatar');
+      }
+      
+      // Get updated user data
+      const updatedUser = await response.json();
+      
+      // Update cache
+      queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      
+      toast({
+        title: "Avatar updated",
+        description: "Your profile picture has been updated successfully",
+      });
+      
+      setAvatarFile(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile picture",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   if (isUserLoading) {
     return (
@@ -164,10 +215,63 @@ export default function Profile() {
         <div className="h-48 bg-gradient-to-r from-primary-600 to-secondary-500 rounded-t-lg"></div>
         <CardContent className="pb-6">
           <div className="flex flex-col md:flex-row md:items-end -mt-20 mb-6">
-            <Avatar className="h-40 w-40 border-4 border-white">
-              <AvatarImage src={userData.avatarUrl || ""} alt={userData.name} />
-              <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-40 w-40 border-4 border-white">
+                <AvatarImage src={userData.avatarUrl || ""} alt={userData.name} />
+                <AvatarFallback className="text-4xl">{initials}</AvatarFallback>
+              </Avatar>
+              
+              {isOwnProfile && (
+                <div className="absolute -bottom-2 -right-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 rounded-full bg-white"
+                    onClick={() => {
+                      document.getElementById('avatar-upload-dialog')?.showModal();
+                    }}
+                  >
+                    <Camera className="h-5 w-5" />
+                  </Button>
+                  
+                  <dialog id="avatar-upload-dialog" className="p-0 rounded-lg shadow-lg backdrop:bg-black/50">
+                    <div className="w-[350px] p-6">
+                      <h3 className="text-lg font-semibold mb-4">Update Profile Picture</h3>
+                      
+                      <FileUpload
+                        onFileSelected={handleAvatarSelected}
+                        acceptedFileTypes="image/*"
+                        maxSizeInMB={2}
+                        previewUrl={userData.avatarUrl}
+                      />
+                      
+                      <div className="flex justify-end space-x-2 mt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setAvatarFile(null);
+                            document.getElementById('avatar-upload-dialog')?.close();
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        
+                        <Button
+                          disabled={!avatarFile || isUploadingAvatar}
+                          onClick={async () => {
+                            await handleAvatarUpload();
+                            document.getElementById('avatar-upload-dialog')?.close();
+                          }}
+                        >
+                          {isUploadingAvatar ? "Uploading..." : "Save"}
+                        </Button>
+                      </div>
+                    </div>
+                  </dialog>
+                </div>
+              )}
+            </div>
+            
             <div className="md:ml-6 mt-6 md:mt-0 flex flex-col md:flex-row md:items-center md:justify-between flex-grow">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">{userData.name}</h1>

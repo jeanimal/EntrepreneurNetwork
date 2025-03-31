@@ -12,6 +12,7 @@ import {
   insertMessageSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
+import { upload, getFileUrl, deleteOldAvatar } from "./file-upload";
 
 // Custom session type
 declare module "express-session" {
@@ -174,6 +175,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update user data
       const updatedUser = await storage.updateUser(userId, req.body);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user data without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Profile Picture Upload
+  apiRouter.post("/users/:id/avatar", requireAuth, upload.single('avatar'), async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Check if user is uploading to their own profile
+      if (userId !== req.session.userId) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+      
+      // Check if file was uploaded
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      // Get current user to check if they have an existing avatar
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Delete old avatar if it exists
+      if (user.avatarUrl) {
+        deleteOldAvatar(user.avatarUrl);
+      }
+      
+      // Get the URL for the new avatar
+      const avatarUrl = getFileUrl(req.file.filename);
+      
+      // Update user with new avatar URL
+      const updatedUser = await storage.updateUser(userId, { avatarUrl });
       
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
