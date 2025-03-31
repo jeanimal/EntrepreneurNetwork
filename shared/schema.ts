@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, foreignKey, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // User model
 export const users = pgTable("users", {
@@ -35,7 +36,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 // Project/Side Gig model
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text("title").notNull(),
   description: text("description").notNull(),
   status: text("status").notNull(), // "active", "planning", "completed", etc.
@@ -67,7 +68,7 @@ export const resourceCategories = [
 // Resource Grid model
 export const resources = pgTable("resources", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   category: text("category").notNull(),
   have: text("have").array(),
   need: text("need").array(),
@@ -84,7 +85,7 @@ export const insertResourceSchema = createInsertSchema(resources).pick({
 // Skills model
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   rating: integer("rating").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -99,7 +100,7 @@ export const insertSkillSchema = createInsertSchema(skills).pick({
 // Post/Feed model
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
   tags: text("tags").array(),
   type: text("type").notNull(), // "update", "project", "opportunity"
@@ -116,8 +117,8 @@ export const insertPostSchema = createInsertSchema(posts).pick({
 // Connection model
 export const connections = pgTable("connections", {
   id: serial("id").primaryKey(),
-  requesterId: integer("requester_id").notNull(),
-  recipientId: integer("recipient_id").notNull(),
+  requesterId: integer("requester_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  recipientId: integer("recipient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   status: text("status").notNull(), // "pending", "accepted", "rejected"
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -131,8 +132,8 @@ export const insertConnectionSchema = createInsertSchema(connections).pick({
 // Message model
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull(),
-  recipientId: integer("recipient_id").notNull(),
+  senderId: integer("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  recipientId: integer("recipient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
@@ -144,6 +145,72 @@ export const insertMessageSchema = createInsertSchema(messages).pick({
   content: true,
   isRead: true,
 });
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  projects: many(projects),
+  resources: many(resources),
+  skills: many(skills),
+  posts: many(posts),
+  sentConnections: many(connections, { relationName: "requesterConnections" }),
+  receivedConnections: many(connections, { relationName: "recipientConnections" }),
+  sentMessages: many(messages, { relationName: "senderMessages" }),
+  receivedMessages: many(messages, { relationName: "recipientMessages" }),
+}));
+
+export const projectsRelations = relations(projects, ({ one }) => ({
+  user: one(users, {
+    fields: [projects.userId],
+    references: [users.id],
+  }),
+}));
+
+export const resourcesRelations = relations(resources, ({ one }) => ({
+  user: one(users, {
+    fields: [resources.userId],
+    references: [users.id],
+  }),
+}));
+
+export const skillsRelations = relations(skills, ({ one }) => ({
+  user: one(users, {
+    fields: [skills.userId],
+    references: [users.id],
+  }),
+}));
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  user: one(users, {
+    fields: [posts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const connectionsRelations = relations(connections, ({ one }) => ({
+  requester: one(users, {
+    fields: [connections.requesterId],
+    references: [users.id],
+    relationName: "requesterConnections",
+  }),
+  recipient: one(users, {
+    fields: [connections.recipientId],
+    references: [users.id],
+    relationName: "recipientConnections",
+  }),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+    relationName: "senderMessages",
+  }),
+  recipient: one(users, {
+    fields: [messages.recipientId],
+    references: [users.id],
+    relationName: "recipientMessages",
+  }),
+}));
 
 // Types
 export type User = typeof users.$inferSelect;

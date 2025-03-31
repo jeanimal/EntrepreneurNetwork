@@ -8,6 +8,8 @@ import {
   messages, Message, InsertMessage,
   resourceCategories
 } from "@shared/schema";
+import { db } from "./db";
+import { and, eq, or, like, desc, asc, sql } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
@@ -119,7 +121,18 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
     const createdAt = new Date();
-    const user: User = { ...insertUser, id, createdAt, profileCompletion: 25 };
+    // Make sure all required fields are provided
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      createdAt,
+      profileCompletion: 25,
+      bio: insertUser.bio || null,
+      location: insertUser.location || null,
+      headline: insertUser.headline || null,
+      company: insertUser.company || null,
+      avatarUrl: insertUser.avatarUrl || null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -161,7 +174,14 @@ export class MemStorage implements IStorage {
   async createProject(project: InsertProject): Promise<Project> {
     const id = this.projectIdCounter++;
     const createdAt = new Date();
-    const newProject: Project = { ...project, id, createdAt };
+    // Make sure all required fields are provided
+    const newProject: Project = { 
+      ...project, 
+      id, 
+      createdAt,
+      lookingFor: project.lookingFor || null,
+      tags: project.tags || null
+    };
     this.projects.set(id, newProject);
     return newProject;
   }
@@ -202,7 +222,14 @@ export class MemStorage implements IStorage {
   async createResource(resource: InsertResource): Promise<Resource> {
     const id = this.resourceIdCounter++;
     const createdAt = new Date();
-    const newResource: Resource = { ...resource, id, createdAt };
+    // Make sure all required fields are provided
+    const newResource: Resource = { 
+      ...resource, 
+      id, 
+      createdAt,
+      have: resource.have || null,
+      need: resource.need || null
+    };
     this.resources.set(id, newResource);
     return newResource;
   }
@@ -250,9 +277,12 @@ export class MemStorage implements IStorage {
   }
   
   async getFeedPosts(): Promise<(Post & { user: User })[]> {
-    const posts = Array.from(this.posts.values()).sort((a, b) => 
-      b.createdAt.getTime() - a.createdAt.getTime()
-    );
+    const posts = Array.from(this.posts.values()).sort((a, b) => {
+      // Handle potential null values
+      const aTime = a.createdAt?.getTime() || 0;
+      const bTime = b.createdAt?.getTime() || 0;
+      return bTime - aTime;
+    });
     
     return posts.map(post => {
       const user = this.users.get(post.userId);
@@ -264,13 +294,24 @@ export class MemStorage implements IStorage {
   async getPostsByUserId(userId: number): Promise<Post[]> {
     return Array.from(this.posts.values()).filter(
       (post) => post.userId === userId
-    ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    ).sort((a, b) => {
+      // Handle potential null values
+      const aTime = a.createdAt?.getTime() || 0;
+      const bTime = b.createdAt?.getTime() || 0;
+      return bTime - aTime;
+    });
   }
   
   async createPost(post: InsertPost): Promise<Post> {
     const id = this.postIdCounter++;
     const createdAt = new Date();
-    const newPost: Post = { ...post, id, createdAt };
+    // Make sure all required fields are provided
+    const newPost: Post = { 
+      ...post, 
+      id, 
+      createdAt,
+      tags: post.tags || null
+    };
     this.posts.set(id, newPost);
     return newPost;
   }
@@ -325,7 +366,12 @@ export class MemStorage implements IStorage {
           (message.senderId === userId1 && message.recipientId === userId2) ||
           (message.senderId === userId2 && message.recipientId === userId1)
       )
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      .sort((a, b) => {
+        // Handle potential null values
+        const aTime = a.createdAt?.getTime() || 0;
+        const bTime = b.createdAt?.getTime() || 0;
+        return aTime - bTime;
+      });
   }
   
   async getMessagesByUserId(userId: number): Promise<Message[]> {
@@ -333,7 +379,12 @@ export class MemStorage implements IStorage {
       .filter(
         (message) => message.recipientId === userId || message.senderId === userId
       )
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      .sort((a, b) => {
+        // Handle potential null values
+        const aTime = a.createdAt?.getTime() || 0;
+        const bTime = b.createdAt?.getTime() || 0;
+        return bTime - aTime;
+      });
   }
   
   async getUnreadMessageCount(userId: number): Promise<number> {
@@ -345,7 +396,13 @@ export class MemStorage implements IStorage {
   async createMessage(message: InsertMessage): Promise<Message> {
     const id = this.messageIdCounter++;
     const createdAt = new Date();
-    const newMessage: Message = { ...message, id, createdAt };
+    // Make sure all required fields are provided
+    const newMessage: Message = { 
+      ...message, 
+      id, 
+      createdAt,
+      isRead: message.isRead || false
+    };
     this.messages.set(id, newMessage);
     return newMessage;
   }
@@ -650,4 +707,273 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+/**
+ * PostgreSQL database storage implementation
+ */
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [user] = await db.update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  async searchUsers(query: string): Promise<User[]> {
+    if (!query) {
+      return await db.select().from(users);
+    }
+
+    return await db.select().from(users).where(
+      or(
+        like(users.name, `%${query}%`),
+        like(users.username, `%${query}%`),
+        like(users.bio || '', `%${query}%`),
+        like(users.headline || '', `%${query}%`),
+        like(users.company || '', `%${query}%`)
+      )
+    );
+  }
+
+  // Project operations
+  async getProject(id: number): Promise<Project | undefined> {
+    const [project] = await db.select().from(projects).where(eq(projects.id, id));
+    return project || undefined;
+  }
+
+  async getProjectsByUserId(userId: number): Promise<Project[]> {
+    return await db.select().from(projects).where(eq(projects.userId, userId));
+  }
+
+  async createProject(project: InsertProject): Promise<Project> {
+    const [newProject] = await db.insert(projects).values(project).returning();
+    return newProject;
+  }
+
+  async updateProject(id: number, projectData: Partial<Project>): Promise<Project | undefined> {
+    const [project] = await db.update(projects)
+      .set(projectData)
+      .where(eq(projects.id, id))
+      .returning();
+    return project || undefined;
+  }
+
+  async deleteProject(id: number): Promise<boolean> {
+    const result = await db.delete(projects).where(eq(projects.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async searchProjects(query: string): Promise<Project[]> {
+    if (!query) {
+      return await db.select().from(projects);
+    }
+
+    return await db.select().from(projects).where(
+      or(
+        like(projects.title, `%${query}%`),
+        like(projects.description, `%${query}%`),
+        like(projects.lookingFor || '', `%${query}%`)
+      )
+    );
+  }
+
+  // Resource operations
+  async getResourcesByUserId(userId: number): Promise<Resource[]> {
+    return await db.select().from(resources).where(eq(resources.userId, userId));
+  }
+
+  async createResource(resource: InsertResource): Promise<Resource> {
+    const [newResource] = await db.insert(resources).values(resource).returning();
+    return newResource;
+  }
+
+  async updateResource(id: number, resourceData: Partial<Resource>): Promise<Resource | undefined> {
+    const [resource] = await db.update(resources)
+      .set(resourceData)
+      .where(eq(resources.id, id))
+      .returning();
+    return resource || undefined;
+  }
+
+  // Skill operations
+  async getSkillsByUserId(userId: number): Promise<Skill[]> {
+    return await db.select().from(skills).where(eq(skills.userId, userId));
+  }
+
+  async createSkill(skill: InsertSkill): Promise<Skill> {
+    const [newSkill] = await db.insert(skills).values(skill).returning();
+    return newSkill;
+  }
+
+  async updateSkill(id: number, skillData: Partial<Skill>): Promise<Skill | undefined> {
+    const [skill] = await db.update(skills)
+      .set(skillData)
+      .where(eq(skills.id, id))
+      .returning();
+    return skill || undefined;
+  }
+
+  async deleteSkill(id: number): Promise<boolean> {
+    const result = await db.delete(skills).where(eq(skills.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Post operations
+  async getPost(id: number): Promise<Post | undefined> {
+    const [post] = await db.select().from(posts).where(eq(posts.id, id));
+    return post || undefined;
+  }
+
+  async getFeedPosts(): Promise<(Post & { user: User })[]> {
+    const postResults = await db.select({
+      post: posts,
+      user: users
+    })
+    .from(posts)
+    .innerJoin(users, eq(posts.userId, users.id))
+    .orderBy(desc(posts.createdAt));
+
+    return postResults.map(({ post, user }) => ({ ...post, user }));
+  }
+
+  async getPostsByUserId(userId: number): Promise<Post[]> {
+    return await db.select()
+      .from(posts)
+      .where(eq(posts.userId, userId))
+      .orderBy(desc(posts.createdAt));
+  }
+
+  async createPost(post: InsertPost): Promise<Post> {
+    const [newPost] = await db.insert(posts).values(post).returning();
+    return newPost;
+  }
+
+  async deletePost(id: number): Promise<boolean> {
+    const result = await db.delete(posts).where(eq(posts.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Connection operations
+  async getConnections(userId: number): Promise<Connection[]> {
+    return await db.select()
+      .from(connections)
+      .where(
+        and(
+          or(
+            eq(connections.requesterId, userId),
+            eq(connections.recipientId, userId)
+          ),
+          eq(connections.status, 'accepted')
+        )
+      );
+  }
+
+  async getPendingConnections(userId: number): Promise<Connection[]> {
+    return await db.select()
+      .from(connections)
+      .where(
+        and(
+          eq(connections.recipientId, userId),
+          eq(connections.status, 'pending')
+        )
+      );
+  }
+
+  async createConnection(connection: InsertConnection): Promise<Connection> {
+    const [newConnection] = await db.insert(connections).values(connection).returning();
+    return newConnection;
+  }
+
+  async updateConnectionStatus(id: number, status: string): Promise<Connection | undefined> {
+    const [connection] = await db.update(connections)
+      .set({ status })
+      .where(eq(connections.id, id))
+      .returning();
+    return connection || undefined;
+  }
+
+  async getConnectionCount(userId: number): Promise<number> {
+    const connections = await this.getConnections(userId);
+    return connections.length;
+  }
+
+  // Message operations
+  async getMessagesBetweenUsers(userId1: number, userId2: number): Promise<Message[]> {
+    return await db.select()
+      .from(messages)
+      .where(
+        or(
+          and(
+            eq(messages.senderId, userId1),
+            eq(messages.recipientId, userId2)
+          ),
+          and(
+            eq(messages.senderId, userId2),
+            eq(messages.recipientId, userId1)
+          )
+        )
+      )
+      .orderBy(asc(messages.createdAt));
+  }
+
+  async getMessagesByUserId(userId: number): Promise<Message[]> {
+    return await db.select()
+      .from(messages)
+      .where(
+        or(
+          eq(messages.senderId, userId),
+          eq(messages.recipientId, userId)
+        )
+      )
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async getUnreadMessageCount(userId: number): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(messages)
+      .where(
+        and(
+          eq(messages.recipientId, userId),
+          eq(messages.isRead, false)
+        )
+      );
+    return result[0]?.count || 0;
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const [newMessage] = await db.insert(messages).values(message).returning();
+    return newMessage;
+  }
+
+  async markMessageAsRead(id: number): Promise<Message | undefined> {
+    const [message] = await db.update(messages)
+      .set({ isRead: true })
+      .where(eq(messages.id, id))
+      .returning();
+    return message || undefined;
+  }
+}
+
+// Use database storage instead of in-memory storage
+export const storage = new DatabaseStorage();
