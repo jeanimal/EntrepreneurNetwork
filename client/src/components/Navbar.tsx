@@ -14,6 +14,7 @@ import {
 import { Bell, Search, Menu, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardData } from "@/lib/types";
+import Logo from "@/components/Logo";
 
 export default function Navbar() {
   const [location, setLocation] = useLocation();
@@ -49,17 +50,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <Link href="/">
-                <div className="h-8 w-8 rounded-md bg-primary-600 flex items-center justify-center text-white font-bold text-lg cursor-pointer">
-                  VC
-                </div>
-              </Link>
-              <Link href="/">
-                <span className="ml-2 text-xl font-semibold text-gray-900 cursor-pointer">
-                  VentureConnect
-                </span>
-              </Link>
+            <div className="flex-shrink-0">
+              <Logo size="medium" />
             </div>
             <nav className="hidden md:ml-6 md:flex space-x-8">
               {navItems.map((item) => (
