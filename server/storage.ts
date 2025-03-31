@@ -728,7 +728,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    // Ensure we have the correct defaults for nullable fields
+    const userWithDefaults = {
+      ...insertUser,
+      profileCompletion: 25,
+      bio: insertUser.bio || null,
+      location: insertUser.location || null,
+      headline: insertUser.headline || null,
+      company: insertUser.company || null,
+      avatarUrl: insertUser.avatarUrl || null
+    };
+    
+    const [user] = await db.insert(users).values(userWithDefaults).returning();
     return user;
   }
 
@@ -767,7 +778,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProject(project: InsertProject): Promise<Project> {
-    const [newProject] = await db.insert(projects).values(project).returning();
+    // Ensure we have the correct defaults for nullable fields
+    const projectWithDefaults = {
+      ...project,
+      lookingFor: project.lookingFor || null,
+      tags: project.tags || null
+    };
+    
+    const [newProject] = await db.insert(projects).values(projectWithDefaults).returning();
     return newProject;
   }
 
@@ -804,7 +822,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createResource(resource: InsertResource): Promise<Resource> {
-    const [newResource] = await db.insert(resources).values(resource).returning();
+    // Ensure we have the correct defaults for nullable fields
+    const resourceWithDefaults = {
+      ...resource,
+      have: resource.have || null,
+      need: resource.need || null
+    };
+    
+    const [newResource] = await db.insert(resources).values(resourceWithDefaults).returning();
     return newResource;
   }
 
@@ -865,7 +890,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPost(post: InsertPost): Promise<Post> {
-    const [newPost] = await db.insert(posts).values(post).returning();
+    // Ensure we have the correct defaults for nullable fields
+    const postWithDefaults = {
+      ...post,
+      tags: post.tags || null
+    };
+    
+    const [newPost] = await db.insert(posts).values(postWithDefaults).returning();
     return newPost;
   }
 
