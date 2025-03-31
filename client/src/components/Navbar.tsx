@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Bell, Search, Menu, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { DashboardData } from "@/lib/types";
 
 export default function Navbar() {
   const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  const { data: dashboard } = useQuery({
+  const { data: dashboard } = useQuery<DashboardData>({
     queryKey: ["/api/dashboard"],
     enabled: !!user,
   });
@@ -63,7 +64,7 @@ export default function Navbar() {
             <nav className="hidden md:ml-6 md:flex space-x-8">
               {navItems.map((item) => (
                 <Link key={item.path} href={item.path}>
-                  <a
+                  <div
                     className={`inline-flex items-center px-1 pt-1 border-b-2 font-medium ${
                       isActive(item.path)
                         ? "border-primary-500 text-gray-900"
@@ -71,7 +72,7 @@ export default function Navbar() {
                     }`}
                   >
                     {item.label}
-                  </a>
+                  </div>
                 </Link>
               ))}
             </nav>
@@ -106,22 +107,22 @@ export default function Navbar() {
                     <div className="font-medium text-sm p-2">Notifications</div>
                     <DropdownMenuSeparator />
                     {unreadMessageCount > 0 && (
-                      <DropdownMenuItem>
-                        <Link href="/messages">
+                      <Link href="/messages">
+                        <DropdownMenuItem asChild>
                           <span className="w-full cursor-pointer">
                             You have {unreadMessageCount} unread message{unreadMessageCount !== 1 ? 's' : ''}
                           </span>
-                        </Link>
-                      </DropdownMenuItem>
+                        </DropdownMenuItem>
+                      </Link>
                     )}
                     {pendingConnectionCount > 0 && (
-                      <DropdownMenuItem>
-                        <Link href="/network">
+                      <Link href="/network">
+                        <DropdownMenuItem asChild>
                           <span className="w-full cursor-pointer">
                             You have {pendingConnectionCount} pending connection{pendingConnectionCount !== 1 ? 's' : ''}
                           </span>
-                        </Link>
-                      </DropdownMenuItem>
+                        </DropdownMenuItem>
+                      </Link>
                     )}
                     {!hasNotifications && (
                       <div className="px-2 py-4 text-sm text-center text-gray-500">
@@ -149,21 +150,21 @@ export default function Navbar() {
                         {user.email}
                       </div>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <Link href={`/profile/${user.id}`}>
+                      <Link href={`/profile/${user.id}`}>
+                        <DropdownMenuItem asChild>
                           <span className="w-full cursor-pointer">Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Link href="/projects">
+                        </DropdownMenuItem>
+                      </Link>
+                      <Link href="/projects">
+                        <DropdownMenuItem asChild>
                           <span className="w-full cursor-pointer">My Projects</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Link href="/network">
+                        </DropdownMenuItem>
+                      </Link>
+                      <Link href="/network">
+                        <DropdownMenuItem asChild>
                           <span className="w-full cursor-pointer">My Network</span>
-                        </Link>
-                      </DropdownMenuItem>
+                        </DropdownMenuItem>
+                      </Link>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleLogout}>
                         Log out
@@ -202,7 +203,7 @@ export default function Navbar() {
           <div className="pt-2 pb-3 space-y-1">
             {navItems.map((item) => (
               <Link key={item.path} href={item.path}>
-                <a
+                <div 
                   className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
                     isActive(item.path)
                       ? "border-primary-500 text-primary-700 bg-primary-50"
@@ -211,7 +212,7 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.label}
-                </a>
+                </div>
               </Link>
             ))}
             
