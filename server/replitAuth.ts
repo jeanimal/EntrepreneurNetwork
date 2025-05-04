@@ -39,7 +39,8 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Only secure in production
+      secure: false, // Allow non-HTTPS during development
+      sameSite: 'lax',
       maxAge: sessionTtl,
     },
   });
@@ -155,19 +156,36 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
-
-  if (!req.isAuthenticated() || !user?.expires_at) {
-    console.log("User not authenticated or missing expires_at:", req.isAuthenticated(), user?.expires_at);
+  console.log("isAuthenticated middleware called for:", req.url);
+  
+  // Check if user is authenticated
+  if (!req.isAuthenticated()) {
+    console.log("Authentication check failed: User not authenticated");
     return res.status(401).json({ message: "Unauthorized" });
   }
-
+  
+  const user = req.user as any;
+  
+  // Check if user object has necessary data
+  if (!user || !user.claims || !user.claims.sub) {
+    console.log("Authentication check failed: Invalid user object:", JSON.stringify(user));
+    return res.status(401).json({ message: "Unauthorized - Invalid session" });
+  }
+  
+  // Check if token is expired
+  if (!user.expires_at) {
+    console.log("Authentication check failed: Missing expires_at in user object");
+    return res.status(401).json({ message: "Unauthorized - Invalid session format" });
+  }
+  
   const now = Math.floor(Date.now() / 1000);
   if (now <= user.expires_at) {
+    console.log("Authentication check passed for user:", user.claims.sub);
     return next();
   }
-
-  console.log("Token expired, attempting refresh");
+  
+  // Token is expired, try to refresh
+  console.log("Token expired at", new Date(user.expires_at * 1000), "attempting refresh");
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
     console.log("No refresh token available");

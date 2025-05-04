@@ -14,6 +14,7 @@ import Messages from "./pages/Messages";
 import Profile from "./pages/Profile";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import { DebugAuthState } from "./utils/debug";
 
 function AuthenticatedRoute({ component: Component, ...rest }: { component: React.ComponentType<any>, path: string }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -46,9 +47,9 @@ function Router() {
           {/* Public routes */}
           <Route path="/" component={Home} />
           
-          {/* These routes are no longer needed with Replit Auth */}
-          {/* <Route path="/login" component={Login} /> */}
-          {/* <Route path="/register" component={Register} /> */}
+          {/* Auth routes */}
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
           
           {/* Protected routes */}
           <Route path="/network">
@@ -68,6 +69,8 @@ function Router() {
         </Switch>
       </div>
       <Footer />
+      {/* Add debug component in development */}
+      {process.env.NODE_ENV !== 'production' && <DebugAuthState />}
     </div>
   );
 }

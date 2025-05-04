@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     queryKey: ["/api/auth/user"],
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnWindowFocus: true,
   });
 
   // For debugging
@@ -56,17 +57,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  // Make sure user is never undefined
-  const safeUser = user === undefined ? null : user;
+  // Handle the case where user might be undefined
+  const contextValue: AuthContextType = {
+    user: user || null,
+    isLoading,
+    isAuthenticated: !!user,
+    login,
+    logout
+  };
 
   return (
-    <AuthContext.Provider value={{ 
-      user: safeUser, 
-      isLoading, 
-      isAuthenticated: !!safeUser,
-      login, 
-      logout 
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
