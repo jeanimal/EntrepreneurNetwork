@@ -13,15 +13,15 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { upload, getFileUrl, deleteOldAvatar } from "./file-upload";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 
-// Custom session type
-declare module "express-session" {
-  interface SessionData {
-    userId: number;
-  }
-}
+// We don't need a custom session type for Replit Auth
+// as the session is handled by passport
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup Replit Auth
+  await setupAuth(app);
+  
   // Create API router
   const apiRouter = Router();
   
@@ -41,94 +41,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(500).json({ message: "Internal server error" });
   };
   
-  // Authentication check middleware
-  const requireAuth = (req: Request, res: Response, next: Function) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+  // Helper to get the authenticated user's ID from Replit Auth
+  const getUserId = (req: any): string => {
+    if (!req.user || !req.user.claims || !req.user.claims.sub) {
+      throw new Error("User not authenticated");
     }
-    next();
+    return req.user.claims.sub;
   };
   
   // AUTH ROUTES
-  apiRouter.post("/auth/register", async (req, res) => {
+  // The main login/logout routes are handled by replitAuth.ts
+  
+  // User data endpoint for authenticated users
+  apiRouter.get("/auth/user", isAuthenticated, async (req: any, res) => {
     try {
-      const userData = insertUserSchema.parse(req.body);
+      // Get user ID from the claims
+      const userId = req.user.claims.sub;
       
-      // Check if username or email already exists
-      const existingUsername = await storage.getUserByUsername(userData.username);
-      if (existingUsername) {
-        return res.status(400).json({ message: "Username already taken" });
+      // Fetch user from database
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
       }
       
-      const existingEmail = await storage.getUserByEmail(userData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already registered" });
-      }
-      
-      // Create user
-      const user = await storage.createUser(userData);
-      
-      // Store user ID in session
-      req.session.userId = user.id;
-      
-      // Return user data without password
-      const { password, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
-    } catch (err) {
-      handleZodError(err, res);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
     }
-  });
-  
-  apiRouter.post("/auth/login", async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      const user = await storage.getUserByUsername(username);
-      
-      if (!user || user.password !== password) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Store user ID in session
-      req.session.userId = user.id;
-      
-      // Return user data without password
-      const { password: _, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-  
-  apiRouter.post("/auth/logout", (req, res) => {
-    req.session.destroy(() => {
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-  
-  apiRouter.get("/auth/me", async (req, res) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Not authenticated" });
-    }
-    
-    const user = await storage.getUser(req.session.userId);
-    
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    
-    // Return user data without password
-    const { password, ...userWithoutPassword } = user;
-    res.json(userWithoutPassword);
   });
   
   // USER ROUTES
-  apiRouter.get("/users", requireAuth, async (req, res) => {
+  apiRouter.get("/users", isAuthenticated, async (req, res) => {
     try {
       const query = req.query.q as string || "";
       const users = await storage.searchUsers(query);
@@ -146,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.get("/users/:id", requireAuth, async (req, res) => {
+  apiRouter.get("/users/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const user = await storage.getUser(userId);
@@ -164,7 +109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.put("/users/:id", requireAuth, async (req, res) => {
+  apiRouter.put("/users/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       
@@ -190,7 +135,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Profile Picture Upload
-  apiRouter.post("/users/:id/avatar", requireAuth, upload.single('avatar'), async (req, res) => {
+  apiRouter.post("/users/:id/avatar", isAuthenticated, upload.single('avatar'), async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       
@@ -235,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // PROJECT ROUTES
-  apiRouter.get("/projects", requireAuth, async (req, res) => {
+  apiRouter.get("/projects", isAuthenticated, async (req, res) => {
     try {
       const query = req.query.q as string || "";
       const projects = await storage.searchProjects(query);
@@ -246,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.get("/users/:userId/projects", requireAuth, async (req, res) => {
+  apiRouter.get("/users/:userId/projects", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const projects = await storage.getProjectsByUserId(userId);
@@ -257,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/projects", requireAuth, async (req, res) => {
+  apiRouter.post("/projects", isAuthenticated, async (req, res) => {
     try {
       const projectData = insertProjectSchema.parse({
         ...req.body,
@@ -271,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.put("/projects/:id", requireAuth, async (req, res) => {
+  apiRouter.put("/projects/:id", isAuthenticated, async (req, res) => {
     try {
       const projectId = parseInt(req.params.id);
       const project = await storage.getProject(projectId);
@@ -293,7 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.delete("/projects/:id", requireAuth, async (req, res) => {
+  apiRouter.delete("/projects/:id", isAuthenticated, async (req, res) => {
     try {
       const projectId = parseInt(req.params.id);
       const project = await storage.getProject(projectId);
@@ -316,7 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // RESOURCE ROUTES
-  apiRouter.get("/users/:userId/resources", requireAuth, async (req, res) => {
+  apiRouter.get("/users/:userId/resources", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const resources = await storage.getResourcesByUserId(userId);
@@ -327,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/resources", requireAuth, async (req, res) => {
+  apiRouter.post("/resources", isAuthenticated, async (req, res) => {
     try {
       const resourceData = insertResourceSchema.parse({
         ...req.body,
@@ -341,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.put("/resources/:id", requireAuth, async (req, res) => {
+  apiRouter.put("/resources/:id", isAuthenticated, async (req, res) => {
     try {
       const resourceId = parseInt(req.params.id);
       const resources = await storage.getResourcesByUserId(req.session.userId);
@@ -360,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // SKILL ROUTES
-  apiRouter.get("/users/:userId/skills", requireAuth, async (req, res) => {
+  apiRouter.get("/users/:userId/skills", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const skills = await storage.getSkillsByUserId(userId);
@@ -371,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/skills", requireAuth, async (req, res) => {
+  apiRouter.post("/skills", isAuthenticated, async (req, res) => {
     try {
       const skillData = insertSkillSchema.parse({
         ...req.body,
@@ -385,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.put("/skills/:id", requireAuth, async (req, res) => {
+  apiRouter.put("/skills/:id", isAuthenticated, async (req, res) => {
     try {
       const skillId = parseInt(req.params.id);
       const skills = await storage.getSkillsByUserId(req.session.userId);
@@ -403,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.delete("/skills/:id", requireAuth, async (req, res) => {
+  apiRouter.delete("/skills/:id", isAuthenticated, async (req, res) => {
     try {
       const skillId = parseInt(req.params.id);
       const skills = await storage.getSkillsByUserId(req.session.userId);
@@ -422,7 +367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // POST/FEED ROUTES
-  apiRouter.get("/feed", requireAuth, async (req, res) => {
+  apiRouter.get("/feed", isAuthenticated, async (req, res) => {
     try {
       const posts = await storage.getFeedPosts();
       res.json(posts);
@@ -432,7 +377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.get("/users/:userId/posts", requireAuth, async (req, res) => {
+  apiRouter.get("/users/:userId/posts", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const posts = await storage.getPostsByUserId(userId);
@@ -443,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/posts", requireAuth, async (req, res) => {
+  apiRouter.post("/posts", isAuthenticated, async (req, res) => {
     try {
       const postData = insertPostSchema.parse({
         ...req.body,
@@ -457,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.delete("/posts/:id", requireAuth, async (req, res) => {
+  apiRouter.delete("/posts/:id", isAuthenticated, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       const post = await storage.getPost(postId);
@@ -480,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // CONNECTION ROUTES
-  apiRouter.get("/connections", requireAuth, async (req, res) => {
+  apiRouter.get("/connections", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const connections = await storage.getConnections(userId);
@@ -513,7 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.get("/connections/pending", requireAuth, async (req, res) => {
+  apiRouter.get("/connections/pending", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const pendingConnections = await storage.getPendingConnections(userId);
@@ -542,7 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/connections", requireAuth, async (req, res) => {
+  apiRouter.post("/connections", isAuthenticated, async (req, res) => {
     try {
       const connectionData = insertConnectionSchema.parse({
         ...req.body,
@@ -590,7 +535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.put("/connections/:id", requireAuth, async (req, res) => {
+  apiRouter.put("/connections/:id", isAuthenticated, async (req, res) => {
     try {
       const connectionId = parseInt(req.params.id);
       const { status } = req.body;
@@ -615,7 +560,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // MESSAGE ROUTES
-  apiRouter.get("/messages", requireAuth, async (req, res) => {
+  apiRouter.get("/messages", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       const messages = await storage.getMessagesByUserId(userId);
@@ -660,7 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.get("/messages/:userId", requireAuth, async (req, res) => {
+  apiRouter.get("/messages/:userId", isAuthenticated, async (req, res) => {
     try {
       const currentUserId = req.session.userId;
       const otherUserId = parseInt(req.params.userId);
@@ -687,7 +632,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/messages", requireAuth, async (req, res) => {
+  apiRouter.post("/messages", isAuthenticated, async (req, res) => {
     try {
       const messageData = insertMessageSchema.parse({
         ...req.body,
@@ -709,7 +654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // DASHBOARD DATA ROUTE
-  apiRouter.get("/dashboard", requireAuth, async (req, res) => {
+  apiRouter.get("/dashboard", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId;
       
