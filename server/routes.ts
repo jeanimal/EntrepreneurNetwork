@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/users/:userId/projects", isAuthenticated, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = req.params.userId;
       const projects = await storage.getProjectsByUserId(userId);
       res.json(projects);
     } catch (err) {
@@ -282,7 +282,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // RESOURCE ROUTES
   apiRouter.get("/users/:userId/resources", isAuthenticated, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = req.params.userId;
       const resources = await storage.getResourcesByUserId(userId);
       res.json(resources);
     } catch (err) {
@@ -327,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SKILL ROUTES
   apiRouter.get("/users/:userId/skills", isAuthenticated, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = req.params.userId;
       const skills = await storage.getSkillsByUserId(userId);
       res.json(skills);
     } catch (err) {
@@ -353,7 +353,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.put("/skills/:id", isAuthenticated, async (req, res) => {
     try {
       const skillId = parseInt(req.params.id);
-      const skills = await storage.getSkillsByUserId(req.session.userId);
+      const userId = getUserId(req);
+      const skills = await storage.getSkillsByUserId(userId);
       const skill = skills.find(s => s.id === skillId);
       
       if (!skill) {
@@ -371,7 +372,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.delete("/skills/:id", isAuthenticated, async (req, res) => {
     try {
       const skillId = parseInt(req.params.id);
-      const skills = await storage.getSkillsByUserId(req.session.userId);
+      const userId = getUserId(req);
+      const skills = await storage.getSkillsByUserId(userId);
       const skill = skills.find(s => s.id === skillId);
       
       if (!skill) {
@@ -399,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/users/:userId/posts", isAuthenticated, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userId = req.params.userId;
       const posts = await storage.getPostsByUserId(userId);
       res.json(posts);
     } catch (err) {
@@ -662,9 +664,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/messages", isAuthenticated, async (req, res) => {
     try {
+      const userId = getUserId(req);
       const messageData = insertMessageSchema.parse({
         ...req.body,
-        senderId: req.session.userId,
+        senderId: userId,
         isRead: false,
       });
       
@@ -684,15 +687,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // DASHBOARD DATA ROUTE
   apiRouter.get("/dashboard", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = getUserId(req);
       
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
-      // Remove password from user data
-      const { password, ...userWithoutPassword } = user;
       
       // Get connections count
       const connectionCount = await storage.getConnectionCount(userId);
@@ -715,7 +715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const resources = await storage.getResourcesByUserId(userId);
       
       res.json({
-        user: userWithoutPassword,
+        user,
         stats: {
           connectionCount,
           pendingCount,
