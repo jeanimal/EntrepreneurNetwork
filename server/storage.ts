@@ -32,19 +32,19 @@ export interface IStorage {
   
   // Project operations
   getProject(id: number): Promise<Project | undefined>;
-  getProjectsByUserId(userId: number): Promise<Project[]>;
+  getProjectsByUserId(userId: string): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
   updateProject(id: number, projectData: Partial<Project>): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
   searchProjects(query: string): Promise<Project[]>;
   
   // Resource operations
-  getResourcesByUserId(userId: number): Promise<Resource[]>;
+  getResourcesByUserId(userId: string): Promise<Resource[]>;
   createResource(resource: InsertResource): Promise<Resource>;
   updateResource(id: number, resourceData: Partial<Resource>): Promise<Resource | undefined>;
   
   // Skill operations
-  getSkillsByUserId(userId: number): Promise<Skill[]>;
+  getSkillsByUserId(userId: string): Promise<Skill[]>;
   createSkill(skill: InsertSkill): Promise<Skill>;
   updateSkill(id: number, skillData: Partial<Skill>): Promise<Skill | undefined>;
   deleteSkill(id: number): Promise<boolean>;
@@ -52,21 +52,21 @@ export interface IStorage {
   // Post operations
   getPost(id: number): Promise<Post | undefined>;
   getFeedPosts(): Promise<(Post & { user: User })[]>;
-  getPostsByUserId(userId: number): Promise<Post[]>;
+  getPostsByUserId(userId: string): Promise<Post[]>;
   createPost(post: InsertPost): Promise<Post>;
   deletePost(id: number): Promise<boolean>;
   
   // Connection operations
-  getConnections(userId: number): Promise<Connection[]>;
-  getPendingConnections(userId: number): Promise<Connection[]>;
+  getConnections(userId: string): Promise<Connection[]>;
+  getPendingConnections(userId: string): Promise<Connection[]>;
   createConnection(connection: InsertConnection): Promise<Connection>;
   updateConnectionStatus(id: number, status: string): Promise<Connection | undefined>;
-  getConnectionCount(userId: number): Promise<number>;
+  getConnectionCount(userId: string): Promise<number>;
   
   // Message operations
-  getMessagesBetweenUsers(userId1: number, userId2: number): Promise<Message[]>;
-  getMessagesByUserId(userId: number): Promise<Message[]>;
-  getUnreadMessageCount(userId: number): Promise<number>;
+  getMessagesBetweenUsers(userId1: string, userId2: string): Promise<Message[]>;
+  getMessagesByUserId(userId: string): Promise<Message[]>;
+  getUnreadMessageCount(userId: string): Promise<number>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: number): Promise<Message | undefined>;
 }
@@ -845,7 +845,7 @@ export class DatabaseStorage implements IStorage {
     return project || undefined;
   }
 
-  async getProjectsByUserId(userId: number): Promise<Project[]> {
+  async getProjectsByUserId(userId: string): Promise<Project[]> {
     return await db.select().from(projects).where(eq(projects.userId, userId));
   }
 
@@ -889,7 +889,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Resource operations
-  async getResourcesByUserId(userId: number): Promise<Resource[]> {
+  async getResourcesByUserId(userId: string): Promise<Resource[]> {
     return await db.select().from(resources).where(eq(resources.userId, userId));
   }
 
@@ -914,7 +914,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Skill operations
-  async getSkillsByUserId(userId: number): Promise<Skill[]> {
+  async getSkillsByUserId(userId: string): Promise<Skill[]> {
     return await db.select().from(skills).where(eq(skills.userId, userId));
   }
 
@@ -954,7 +954,7 @@ export class DatabaseStorage implements IStorage {
     return postResults.map(({ post, user }) => ({ ...post, user }));
   }
 
-  async getPostsByUserId(userId: number): Promise<Post[]> {
+  async getPostsByUserId(userId: string): Promise<Post[]> {
     return await db.select()
       .from(posts)
       .where(eq(posts.userId, userId))
@@ -978,7 +978,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Connection operations
-  async getConnections(userId: number): Promise<Connection[]> {
+  async getConnections(userId: string): Promise<Connection[]> {
     return await db.select()
       .from(connections)
       .where(
@@ -992,7 +992,7 @@ export class DatabaseStorage implements IStorage {
       );
   }
 
-  async getPendingConnections(userId: number): Promise<Connection[]> {
+  async getPendingConnections(userId: string): Promise<Connection[]> {
     return await db.select()
       .from(connections)
       .where(
@@ -1016,13 +1016,13 @@ export class DatabaseStorage implements IStorage {
     return connection || undefined;
   }
 
-  async getConnectionCount(userId: number): Promise<number> {
+  async getConnectionCount(userId: string): Promise<number> {
     const connections = await this.getConnections(userId);
     return connections.length;
   }
 
   // Message operations
-  async getMessagesBetweenUsers(userId1: number, userId2: number): Promise<Message[]> {
+  async getMessagesBetweenUsers(userId1: string, userId2: string): Promise<Message[]> {
     return await db.select()
       .from(messages)
       .where(
@@ -1040,7 +1040,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(messages.createdAt));
   }
 
-  async getMessagesByUserId(userId: number): Promise<Message[]> {
+  async getMessagesByUserId(userId: string): Promise<Message[]> {
     return await db.select()
       .from(messages)
       .where(
@@ -1052,7 +1052,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(messages.createdAt));
   }
 
-  async getUnreadMessageCount(userId: number): Promise<number> {
+  async getUnreadMessageCount(userId: string): Promise<number> {
     const result = await db.select({ count: sql<number>`count(*)` })
       .from(messages)
       .where(
