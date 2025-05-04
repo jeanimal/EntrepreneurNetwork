@@ -56,9 +56,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/auth/user", isAuthenticated, async (req: any, res) => {
     try {
       // Get user ID from the claims
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       
       // Fetch user from database
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Legacy endpoint for backward compatibility
+  apiRouter.get("/auth/me", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -206,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const projectData = insertProjectSchema.parse({
         ...req.body,
-        userId: req.session.userId,
+        userId: getUserId(req),
       });
       
       const project = await storage.createProject(projectData);
@@ -276,7 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const resourceData = insertResourceSchema.parse({
         ...req.body,
-        userId: req.session.userId,
+        userId: getUserId(req),
       });
       
       const resource = await storage.createResource(resourceData);

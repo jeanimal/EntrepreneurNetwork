@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
-import { AuthProvider } from "./lib/auth.tsx";
+import { AuthProvider, useAuth } from "./lib/auth.tsx";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Home from "./pages/Home";
@@ -16,16 +16,21 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
 function AuthenticatedRoute({ component: Component, ...rest }: { component: React.ComponentType<any>, path: string }) {
-  const [isLoggedIn] = useState<boolean>(true); // Replace with actual auth check
+  const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      setLocation("/login");
+    if (!isLoading && !isAuthenticated) {
+      // Redirect to the Replit Auth login
+      window.location.href = "/api/login";
     }
-  }, [isLoggedIn, setLocation]);
+  }, [isAuthenticated, isLoading, setLocation]);
 
-  if (!isLoggedIn) {
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
     return null;
   }
 
