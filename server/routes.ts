@@ -81,6 +81,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // The getUserId helper is already defined above
+
   // Legacy endpoint for backward compatibility
   apiRouter.get("/auth/me", isAuthenticated, async (req: any, res) => {
     try {
@@ -103,14 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const query = req.query.q as string || "";
       const users = await storage.searchUsers(query);
-      
-      // Remove passwords from users
-      const sanitizedUsers = users.map(user => {
-        const { password, ...userWithoutPassword } = user;
-        return userWithoutPassword;
-      });
-      
-      res.json(sanitizedUsers);
+      res.json(users);
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Internal server error" });
@@ -119,16 +114,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/users/:id", isAuthenticated, async (req, res) => {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = req.params.id;
       const user = await storage.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Return user data without password
-      const { password, ...userWithoutPassword } = user;
-      res.json(userWithoutPassword);
+      res.json(user);
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Internal server error" });
@@ -137,10 +130,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.put("/users/:id", isAuthenticated, async (req, res) => {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = req.params.id;
+      const currentUserId = getUserId(req);
       
       // Check if user is updating their own profile
-      if (userId !== req.session.userId) {
+      if (userId !== currentUserId) {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
       
@@ -151,9 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Return user data without password
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.json(userWithoutPassword);
+      res.json(updatedUser);
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Internal server error" });
@@ -163,10 +155,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Profile Picture Upload
   apiRouter.post("/users/:id/avatar", isAuthenticated, upload.single('avatar'), async (req, res) => {
     try {
-      const userId = parseInt(req.params.id);
+      const userId = req.params.id;
+      const currentUserId = getUserId(req);
       
       // Check if user is uploading to their own profile
-      if (userId !== req.session.userId) {
+      if (userId !== currentUserId) {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
       
@@ -196,9 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Return user data without password
-      const { password, ...userWithoutPassword } = updatedUser;
-      res.json(userWithoutPassword);
+      res.json(updatedUser);
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Internal server error" });
@@ -441,7 +432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user owns the post
-      if (post.userId !== req.session.userId) {
+      const userId = getUserId(req);
+      if (post.userId !== userId) {
         return res.status(403).json({ message: "You can only delete your own posts" });
       }
       
@@ -456,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // CONNECTION ROUTES
   apiRouter.get("/connections", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = getUserId(req);
       const connections = await storage.getConnections(userId);
       
       // Get details for connected users
@@ -469,10 +461,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(otherUserId);
           if (!user) return null;
           
-          const { password, ...userWithoutPassword } = user;
           return {
             connection,
-            user: userWithoutPassword,
+            user,
           };
         })
       );
@@ -489,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/connections/pending", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = getUserId(req);
       const pendingConnections = await storage.getPendingConnections(userId);
       
       // Get details for requesters
@@ -498,10 +489,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const requester = await storage.getUser(connection.requesterId);
           if (!requester) return null;
           
-          const { password, ...requesterWithoutPassword } = requester;
           return {
             connection,
-            user: requesterWithoutPassword,
+            user: requester,
           };
         })
       );
@@ -518,9 +508,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/connections", isAuthenticated, async (req, res) => {
     try {
+      const userId = getUserId(req);
       const connectionData = insertConnectionSchema.parse({
         ...req.body,
-        requesterId: req.session.userId,
+        requesterId: userId,
         status: 'pending',
       });
       
@@ -531,11 +522,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if connection already exists
-      const userConnections = await storage.getConnections(req.session.userId);
+      const userConnections = await storage.getConnections(userId);
       const existingConnection = userConnections.find(
         conn => 
-          (conn.requesterId === req.session.userId && conn.recipientId === connectionData.recipientId) ||
-          (conn.requesterId === connectionData.recipientId && conn.recipientId === req.session.userId)
+          (conn.requesterId === userId && conn.recipientId === connectionData.recipientId) ||
+          (conn.requesterId === connectionData.recipientId && conn.recipientId === userId)
       );
       
       if (existingConnection) {
@@ -543,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if there's a pending connection
-      const pendingConnections = await storage.getPendingConnections(req.session.userId);
+      const pendingConnections = await storage.getPendingConnections(userId);
       const existingPending = pendingConnections.find(
         conn => conn.requesterId === connectionData.recipientId
       );
@@ -567,13 +558,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.put("/connections/:id", isAuthenticated, async (req, res) => {
     try {
       const connectionId = parseInt(req.params.id);
+      const userId = getUserId(req);
       const { status } = req.body;
       
       if (!status || !['accepted', 'rejected'].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
       
-      const pendingConnections = await storage.getPendingConnections(req.session.userId);
+      const pendingConnections = await storage.getPendingConnections(userId);
       const connection = pendingConnections.find(conn => conn.id === connectionId);
       
       if (!connection) {
@@ -591,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // MESSAGE ROUTES
   apiRouter.get("/messages", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.session.userId;
+      const userId = getUserId(req);
       const messages = await storage.getMessagesByUserId(userId);
       
       // Group messages by conversation partner
@@ -604,16 +596,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(otherUserId);
           if (!user) continue;
           
-          const { password, ...userWithoutPassword } = user;
-          
           conversationsMap.set(otherUserId, {
-            user: userWithoutPassword,
+            user: user,
             lastMessage: message,
             unreadCount: message.recipientId === userId && !message.isRead ? 1 : 0,
           });
         } else {
           const conversation = conversationsMap.get(otherUserId);
-          if (new Date(message.createdAt) > new Date(conversation.lastMessage.createdAt)) {
+          // Check if createdAt is null before creating Date objects
+          const messageDate = message.createdAt ? new Date(message.createdAt) : new Date(0);
+          const lastMessageDate = conversation.lastMessage.createdAt ? 
+            new Date(conversation.lastMessage.createdAt) : new Date(0);
+            
+          if (messageDate > lastMessageDate) {
             conversation.lastMessage = message;
           }
           
@@ -625,7 +620,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Convert map to array and sort by last message date
       const conversations = Array.from(conversationsMap.values())
-        .sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
+        .sort((a, b) => {
+          const dateA = a.lastMessage.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+          const dateB = b.lastMessage.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
       
       res.json(conversations);
     } catch (err) {
@@ -636,8 +635,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/messages/:userId", isAuthenticated, async (req, res) => {
     try {
-      const currentUserId = req.session.userId;
-      const otherUserId = parseInt(req.params.userId);
+      const currentUserId = getUserId(req);
+      const otherUserId = req.params.userId;
       
       // Check if the other user exists
       const otherUser = await storage.getUser(otherUserId);
