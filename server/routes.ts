@@ -18,6 +18,8 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 // We don't need a custom session type for Replit Auth
 // as the session is handled by passport
 
+
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
   await setupAuth(app);
@@ -41,12 +43,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(500).json({ message: "Internal server error" });
   };
   
-  // Helper to get the authenticated user's ID from Replit Auth
+  // Helper to get the authenticated user's ID from Replit Auth or legacy auth
   const getUserId = (req: any): string => {
-    if (!req.user || !req.user.claims || !req.user.claims.sub) {
-      throw new Error("User not authenticated");
+    // Try to get user ID from Replit Auth
+    if (req.user?.claims?.sub) {
+      return req.user.claims.sub;
     }
-    return req.user.claims.sub;
+    
+    // Fallback to legacy session
+    if (req.session?.userId) {
+      return req.session.userId.toString();
+    }
+    
+    throw new Error("User not authenticated");
   };
   
   // AUTH ROUTES
@@ -243,7 +252,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user owns the project
-      if (project.userId !== req.session.userId) {
+      const userId = getUserId(req);
+      if (project.userId !== userId) {
         return res.status(403).json({ message: "You can only update your own projects" });
       }
       
@@ -265,7 +275,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if user owns the project
-      if (project.userId !== req.session.userId) {
+      const userId = getUserId(req);
+      if (project.userId !== userId) {
         return res.status(403).json({ message: "You can only delete your own projects" });
       }
       
@@ -306,7 +317,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.put("/resources/:id", isAuthenticated, async (req, res) => {
     try {
       const resourceId = parseInt(req.params.id);
-      const resources = await storage.getResourcesByUserId(req.session.userId);
+      const userId = getUserId(req);
+      const resources = await storage.getResourcesByUserId(userId);
       const resource = resources.find(r => r.id === resourceId);
       
       if (!resource) {
@@ -337,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const skillData = insertSkillSchema.parse({
         ...req.body,
-        userId: req.session.userId,
+        userId: getUserId(req),
       });
       
       const skill = await storage.createSkill(skillData);
@@ -409,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const postData = insertPostSchema.parse({
         ...req.body,
-        userId: req.session.userId,
+        userId: getUserId(req),
       });
       
       const post = await storage.createPost(postData);
