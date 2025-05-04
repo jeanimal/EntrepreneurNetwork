@@ -158,6 +158,32 @@ export async function setupAuth(app: Express) {
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
+  
+  // Debug route to check session state
+  app.get("/api/auth/debug", (req: any, res) => {
+    try {
+      const sessionInfo = {
+        isAuthenticated: req.isAuthenticated(),
+        hasUser: !!req.user,
+        session: req.session,
+        userSummary: req.user ? {
+          hasClaims: !!req.user.claims,
+          claims: req.user.claims ? {
+            sub: req.user.claims.sub,
+            username: req.user.claims.username,
+            email: req.user.claims.email,
+          } : null,
+          expiresAt: req.user.expires_at,
+          hasRefreshToken: !!req.user.refresh_token,
+        } : null
+      };
+      
+      res.json(sessionInfo);
+    } catch (error) {
+      console.error("Error in debug route:", error);
+      res.status(500).json({ message: "Error generating debug info", error: String(error) });
+    }
+  });
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {

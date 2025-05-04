@@ -20,18 +20,15 @@ export const users = pgTable("users", {
   username: varchar("username").unique().notNull(),
   email: varchar("email").unique(),
   name: varchar("name"),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
+  password: varchar("password"), // This will be null for Replit Auth users
   bio: text("bio"),
   location: text("location"),
   headline: text("headline"),
   company: text("company"),
-  profileImageUrl: varchar("profile_image_url"), // Profile image from Replit
-  avatarUrl: text("avatar_url"), // Custom uploaded avatar
-  userType: text("user_type").default("entrepreneur"), // "entrepreneur" or "investor"
-  profileCompletion: integer("profile_completion").default(0),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  avatar_url: text("avatar_url"), // Avatar from Replit or custom uploaded
+  user_type: text("user_type").default("entrepreneur"), // "entrepreneur" or "investor"
+  profile_completion: integer("profile_completion").default(0),
+  created_at: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users);
