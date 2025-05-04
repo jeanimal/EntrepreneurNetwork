@@ -13,11 +13,11 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1">
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-200">
-                Entrepreneur Network
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+                Connect, Collaborate, Create.
               </h1>
               <p className="text-xl md:text-2xl max-w-xl mb-8">
-                A place for founders and investors to get to know each other and help each other.
+                Join a vibrant community where founders and investors meet to build the future together.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
@@ -25,7 +25,7 @@ export default function Landing() {
                   onClick={() => window.location.href = "/api/login"}
                   className="bg-white text-primary-700 hover:bg-gray-100 hover:text-primary-800 px-8 py-3 text-lg"
                 >
-                  Create Account
+                  Get Started
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 {!isAuthenticated && (
@@ -35,7 +35,7 @@ export default function Landing() {
                     onClick={() => window.location.href = "/api/login"}
                     className="border-white text-white hover:bg-white/10 px-8 py-3 text-lg"
                   >
-                    Sign In
+                    Log In
                   </Button>
                 )}
               </div>
@@ -77,10 +77,10 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Entrepreneur Network
+              The Entrepreneur Network
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              A place for founders and investors to get to know each other and help each other.
+              A powerful platform designed to help entrepreneurs and investors connect, share resources, and build successful ventures together.
             </p>
           </div>
           
@@ -127,23 +127,13 @@ export default function Landing() {
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Take the first step toward building meaningful connections and growing your ventures.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg"
-              onClick={() => window.location.href = "/api/login"}
-              className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 text-lg"
-            >
-              Create Account
-            </Button>
-            <Button 
-              variant="outline"
-              size="lg"
-              onClick={() => window.location.href = "/api/login"}
-              className="border-primary-600 text-primary-700 hover:bg-primary-50 px-8 py-3 text-lg"
-            >
-              Sign In
-            </Button>
-          </div>
+          <Button 
+            size="lg"
+            onClick={() => window.location.href = "/api/login"}
+            className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-6 text-lg"
+          >
+            Join Now
+          </Button>
         </div>
       </section>
 
