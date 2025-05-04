@@ -14,11 +14,20 @@ import { and, eq, or, like, desc, asc, sql } from "drizzle-orm";
 // Interface for storage operations
 export interface IStorage {
   // User operations
-  getUser(id: number): Promise<User | undefined>;
+  getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
+  updateUser(id: string, userData: Partial<User>): Promise<User | undefined>;
+  upsertUser(userData: { 
+    id: string, 
+    username: string, 
+    email?: string | null, 
+    firstName?: string | null, 
+    lastName?: string | null,
+    bio?: string | null,
+    profileImageUrl?: string | null
+  }): Promise<User>;
   searchUsers(query: string): Promise<User[]>;
   
   // Project operations
@@ -712,7 +721,7 @@ export class MemStorage implements IStorage {
  */
 export class DatabaseStorage implements IStorage {
   // User operations
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
@@ -723,6 +732,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!email) return undefined;
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
@@ -743,12 +753,74 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+  async updateUser(id: string, userData: Partial<User>): Promise<User | undefined> {
     const [user] = await db.update(users)
       .set(userData)
       .where(eq(users.id, id))
       .returning();
     return user || undefined;
+  }
+
+  async upsertUser(userData: { 
+    id: string, 
+    username: string, 
+    email?: string | null, 
+    firstName?: string | null, 
+    lastName?: string | null,
+    bio?: string | null,
+    profileImageUrl?: string | null
+  }): Promise<User> {
+    // Try to find the user first
+    const existingUser = await this.getUser(userData.id);
+    
+    // If we have a name from both first and last name, combine them
+    const name = userData.firstName && userData.lastName 
+      ? `${userData.firstName} ${userData.lastName}`
+      : existingUser?.name ?? userData.username;
+    
+    // Calculate profile completion
+    let profileCompletion = 20; // Base score for having an account
+    if (userData.email) profileCompletion += 10;
+    if (userData.firstName && userData.lastName) profileCompletion += 10;
+    if (userData.bio) profileCompletion += 10;
+    if (userData.profileImageUrl) profileCompletion += 10;
+    if (existingUser?.location) profileCompletion += 10;
+    if (existingUser?.headline) profileCompletion += 10;
+    if (existingUser?.company) profileCompletion += 10;
+    if (existingUser?.avatarUrl) profileCompletion += 10;
+    
+    // Prepare data for upsert operation
+    const upsertData = {
+      id: userData.id,
+      username: userData.username,
+      email: userData.email || existingUser?.email || null,
+      name,
+      firstName: userData.firstName || existingUser?.firstName || null,
+      lastName: userData.lastName || existingUser?.lastName || null,
+      bio: userData.bio || existingUser?.bio || null,
+      profileImageUrl: userData.profileImageUrl || existingUser?.profileImageUrl || null,
+      profileCompletion,
+      
+      // Keep existing values if they exist
+      location: existingUser?.location || null,
+      headline: existingUser?.headline || null,
+      company: existingUser?.company || null,
+      avatarUrl: existingUser?.avatarUrl || null,
+      userType: existingUser?.userType || "entrepreneur",
+      updatedAt: new Date()
+    };
+    
+    // Perform upsert
+    const [user] = await db
+      .insert(users)
+      .values(upsertData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: upsertData
+      })
+      .returning();
+      
+    return user;
   }
 
   async searchUsers(query: string): Promise<User[]> {
