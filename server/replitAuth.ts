@@ -60,10 +60,22 @@ async function upsertUser(
   claims: any,
 ) {
   try {
+    // Check if another user already exists with the same username
+    const existingUsername = await storage.getUserByUsername(claims["username"]);
+    
+    // If another user has the same username but different ID, make this username unique
+    let username = claims["username"];
+    if (existingUsername && existingUsername.id !== claims["sub"]) {
+      // Generate a unique username by appending the last 6 digits of the Replit ID
+      const idSuffix = claims["sub"].slice(-6);
+      username = `${claims["username"]}_${idSuffix}`;
+      console.log(`Username collision detected. Using ${username} instead of ${claims["username"]}`);
+    }
+    
     // Match user data to existing database columns
     const userData = {
       id: claims["sub"],
-      username: claims["username"],
+      username: username,
       email: claims["email"],
       // Combine first_name and last_name to name field
       name: claims["first_name"] && claims["last_name"] 
@@ -75,7 +87,7 @@ async function upsertUser(
       user_type: "entrepreneur", // Default user type
     };
     console.log("Upserting user with data:", JSON.stringify(userData));
-    await storage.upsertUser(userData);
+    return await storage.upsertUser(userData);
   } catch (error) {
     console.error("Error upserting user:", error);
     throw error;
@@ -97,7 +109,11 @@ export async function setupAuth(app: Express) {
     try {
       const user = {};
       updateUserSession(user, tokens);
-      await upsertUser(tokens.claims());
+      // Make sure to save the user before proceeding
+      const dbUser = await upsertUser(tokens.claims());
+      if (!dbUser) {
+        throw new Error("Failed to create or update user");
+      }
       verified(null, user);
     } catch (error) {
       console.error("Error in verify function:", error);
