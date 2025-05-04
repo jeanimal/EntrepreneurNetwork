@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./lib/auth.tsx";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Home from "./pages/Home";
+import Landing from "./pages/Landing";
 import Network from "./pages/Network";
 import Projects from "./pages/Projects";
 import Messages from "./pages/Messages";
@@ -39,13 +40,31 @@ function AuthenticatedRoute({ component: Component, ...rest }: { component: Reac
 }
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
+  
+  // Determine if we should show the standard navbar and footer
+  const showNavbarFooter = isAuthenticated || location === "/login" || location === "/register";
+  
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      {/* Only show Navbar on authenticated routes or certain public pages */}
+      {showNavbarFooter && <Navbar />}
+      
       <div className="flex-grow">
         <Switch>
-          {/* Public routes */}
-          <Route path="/" component={Home} />
+          {/* Home route - conditionally render Landing or Home based on auth state */}
+          <Route path="/">
+            {isLoading ? (
+              <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+              </div>
+            ) : isAuthenticated ? (
+              <Home />
+            ) : (
+              <Landing />
+            )}
+          </Route>
           
           {/* Auth routes */}
           <Route path="/login" component={Login} />
@@ -68,7 +87,12 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </div>
-      <Footer />
+      
+      {/* Only show Footer on authenticated routes or certain public pages */}
+      {showNavbarFooter && <Footer />}
+      
+      {/* Landing page has its own footer, so we don't need to render the standard Footer */}
+      
       {/* Add debug component in development */}
       {process.env.NODE_ENV !== 'production' && <DebugAuthState />}
     </div>
