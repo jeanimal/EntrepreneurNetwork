@@ -129,9 +129,9 @@ export default function Navbar() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full">
                         <Avatar>
-                          <AvatarImage src={user.avatarUrl || ""} alt={(user.firstName || user.username)} />
+                          <AvatarImage src={user.avatar_url || ""} alt={(user.name || user.username)} />
                           <AvatarFallback>
-                            {user.firstName ? user.firstName.substring(0, 1).toUpperCase() : 
+                            {user.name ? user.name.substring(0, 1).toUpperCase() : 
                              user.username ? user.username.substring(0, 1).toUpperCase() : "U"}
                           </AvatarFallback>
                         </Avatar>
@@ -139,7 +139,7 @@ export default function Navbar() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <div className="font-medium text-sm px-2 py-1.5">
-                        {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}
+                        {user.name || user.username}
                       </div>
                       <div className="text-xs text-gray-500 px-2 pb-1.5">
                         {user.email}

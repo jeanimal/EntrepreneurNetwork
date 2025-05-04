@@ -844,9 +844,12 @@ export class DatabaseStorage implements IStorage {
   async upsertUser(userData: { 
     id: string, 
     username: string, 
-    email?: string | null, 
+    email?: string | null,
+    firstName?: string | null,
+    lastName?: string | null, 
     name?: string | null,
     bio?: string | null,
+    profileImageUrl?: string | null,
     avatar_url?: string | null,
     user_type?: string | null
   }): Promise<User> {
@@ -854,12 +857,26 @@ export class DatabaseStorage implements IStorage {
       // Try to find the user first
       const existingUser = await this.getUser(userData.id);
       
+      // Handle name creation from firstName and lastName if provided
+      let name = userData.name;
+      if (!name && userData.firstName && userData.lastName) {
+        name = `${userData.firstName} ${userData.lastName}`;
+      } else if (!name && userData.firstName) {
+        name = userData.firstName;
+      }
+
+      // Handle avatar from profileImageUrl
+      let avatarUrl = userData.avatar_url;
+      if (!avatarUrl && userData.profileImageUrl) {
+        avatarUrl = userData.profileImageUrl;
+      }
+      
       // Calculate profile completion
       let profile_completion = 20; // Base score for having an account
       if (userData.email) profile_completion += 10;
-      if (userData.name) profile_completion += 10;
+      if (name) profile_completion += 10;
       if (userData.bio) profile_completion += 10;
-      if (userData.avatar_url) profile_completion += 10;
+      if (avatarUrl) profile_completion += 10;
       if (existingUser?.location) profile_completion += 10;
       if (existingUser?.headline) profile_completion += 10;
       if (existingUser?.company) profile_completion += 10;
@@ -869,9 +886,9 @@ export class DatabaseStorage implements IStorage {
         id: userData.id,
         username: userData.username,
         email: userData.email || existingUser?.email || null,
-        name: userData.name || existingUser?.name || null,
+        name: name || existingUser?.name || null,
         bio: userData.bio || existingUser?.bio || null,
-        avatar_url: userData.avatar_url || existingUser?.avatar_url || null,
+        avatar_url: avatarUrl || existingUser?.avatar_url || null,
         user_type: userData.user_type || existingUser?.user_type || "entrepreneur",
         profile_completion,
       };
