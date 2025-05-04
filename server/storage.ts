@@ -134,15 +134,22 @@ export class MemStorage implements IStorage {
     const createdAt = new Date();
     // Make sure all required fields are provided
     const user: User = { 
-      ...insertUser, 
       id: idStr, // Use string ID
-      createdAt,
-      profileCompletion: 25,
+      username: insertUser.username,
+      email: insertUser.email || null,
+      name: insertUser.name || null,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
       bio: insertUser.bio || null,
       location: insertUser.location || null,
       headline: insertUser.headline || null,
       company: insertUser.company || null,
-      avatarUrl: insertUser.avatarUrl || null
+      avatarUrl: insertUser.avatarUrl || null,
+      profileImageUrl: insertUser.avatarUrl || null, // Use avatarUrl for profileImageUrl
+      profileCompletion: 25,
+      userType: insertUser.userType || 'entrepreneur',
+      createdAt,
+      updatedAt: null
     };
     this.users.set(idStr, user);
     return user;
@@ -199,6 +206,7 @@ export class MemStorage implements IStorage {
         location: null,
         company: null,
         avatarUrl: userData.profileImageUrl || null,
+        profileImageUrl: userData.profileImageUrl || null,
         profileCompletion: 25,
         userType: 'entrepreneur',
         createdAt: new Date(),
@@ -422,7 +430,7 @@ export class MemStorage implements IStorage {
   }
   
   // Message operations
-  async getMessagesBetweenUsers(userId1: number, userId2: number): Promise<Message[]> {
+  async getMessagesBetweenUsers(userId1: string, userId2: string): Promise<Message[]> {
     return Array.from(this.messages.values())
       .filter(
         (message) => 
@@ -437,7 +445,7 @@ export class MemStorage implements IStorage {
       });
   }
   
-  async getMessagesByUserId(userId: number): Promise<Message[]> {
+  async getMessagesByUserId(userId: string): Promise<Message[]> {
     return Array.from(this.messages.values())
       .filter(
         (message) => message.recipientId === userId || message.senderId === userId
@@ -450,7 +458,7 @@ export class MemStorage implements IStorage {
       });
   }
   
-  async getUnreadMessageCount(userId: number): Promise<number> {
+  async getUnreadMessageCount(userId: string): Promise<number> {
     return Array.from(this.messages.values()).filter(
       (message) => message.recipientId === userId && !message.isRead
     ).length;
@@ -483,104 +491,122 @@ export class MemStorage implements IStorage {
   private seedData() {
     // Create sample users
     const alexMorgan: User = {
-      id: this.userIdCounter++,
+      id: String(this.userIdCounter++),
       username: 'alexmorgan',
-      password: 'password123', // In real app, this would be hashed
       email: 'alex@example.com',
       name: 'Alex Morgan',
+      firstName: 'Alex',
+      lastName: 'Morgan',
       bio: 'Tech entrepreneur focused on creating innovative solutions',
       location: 'San Francisco, CA',
       headline: 'Tech Founder & Product Strategist',
       company: 'TechSprint',
       avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      profileImageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
       userType: 'entrepreneur',
       profileCompletion: 78,
       createdAt: new Date(),
+      updatedAt: null
     };
     this.users.set(alexMorgan.id, alexMorgan);
     
     const jessicaWilson: User = {
-      id: this.userIdCounter++,
+      id: String(this.userIdCounter++),
       username: 'jessicawilson',
-      password: 'password123',
       email: 'jessica@example.com',
       name: 'Jessica Wilson',
+      firstName: 'Jessica',
+      lastName: 'Wilson',
       bio: 'Angel investor with a focus on fintech startups',
       location: 'New York, NY',
       headline: 'Angel Investor • FinTech',
       company: 'Wilson Investments',
       avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      profileImageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
       userType: 'investor',
       profileCompletion: 90,
       createdAt: new Date(),
+      updatedAt: null
     };
     this.users.set(jessicaWilson.id, jessicaWilson);
     
     const davidKim: User = {
-      id: this.userIdCounter++,
+      id: String(this.userIdCounter++),
       username: 'davidkim',
-      password: 'password123',
       email: 'david@example.com',
       name: 'David Kim',
+      firstName: 'David',
+      lastName: 'Kim',
       bio: 'Backend developer specializing in AI solutions',
       location: 'Austin, TX',
       headline: 'Backend Developer • AI',
       company: 'AI Solutions',
       avatarUrl: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      profileImageUrl: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
       userType: 'entrepreneur',
       profileCompletion: 65,
       createdAt: new Date(),
+      updatedAt: null
     };
     this.users.set(davidKim.id, davidKim);
     
     const robertJohnson: User = {
-      id: this.userIdCounter++,
+      id: String(this.userIdCounter++),
       username: 'robertjohnson',
-      password: 'password123',
       email: 'robert@example.com',
       name: 'Robert Johnson',
+      firstName: 'Robert',
+      lastName: 'Johnson',
       bio: 'CTO with experience scaling tech platforms',
       location: 'Seattle, WA',
       headline: 'CTO • SaaS Platform',
       company: 'SaaS Solutions',
       avatarUrl: 'https://images.unsplash.com/photo-1463453091185-61582044d556?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      profileImageUrl: 'https://images.unsplash.com/photo-1463453091185-61582044d556?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
       userType: 'entrepreneur',
       profileCompletion: 85,
       createdAt: new Date(),
+      updatedAt: null
     };
     this.users.set(robertJohnson.id, robertJohnson);
     
     const michaelFoster: User = {
-      id: this.userIdCounter++,
+      id: String(this.userIdCounter++),
       username: 'michaelfoster',
-      password: 'password123',
       email: 'michael@example.com',
       name: 'Michael Foster',
+      firstName: 'Michael',
+      lastName: 'Foster',
       bio: 'Tech recruiter and startup advisor',
       location: 'Boston, MA',
       headline: 'Tech Recruiter & Startup Advisor',
       company: 'Foster Recruiting',
       avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      profileImageUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
       userType: 'entrepreneur',
       profileCompletion: 70,
       createdAt: new Date(),
+      updatedAt: null
     };
     this.users.set(michaelFoster.id, michaelFoster);
     
     const sarahWilliams: User = {
-      id: this.userIdCounter++,
+      id: String(this.userIdCounter++),
       username: 'sarahwilliams',
-      password: 'password123',
       email: 'sarah@example.com',
       name: 'Sarah Williams',
+      firstName: 'Sarah',
+      lastName: 'Williams',
       bio: 'Founder of EcoTrack, a sustainability monitoring platform',
       location: 'Portland, OR',
       headline: 'Founder • Green Tech',
       company: 'EcoTrack',
       avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      profileImageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
       userType: 'entrepreneur',
       profileCompletion: 80,
       createdAt: new Date(),
+      updatedAt: null
     };
     this.users.set(sarahWilliams.id, sarahWilliams);
     
