@@ -56,11 +56,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // Make sure user is never undefined
+  const safeUser = user === undefined ? null : user;
+
   return (
     <AuthContext.Provider value={{ 
-      user, 
+      user: safeUser, 
       isLoading, 
-      isAuthenticated: !!user,
+      isAuthenticated: !!safeUser,
       login, 
       logout 
     }}>
