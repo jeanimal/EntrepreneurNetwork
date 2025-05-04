@@ -131,8 +131,8 @@ export const insertPostSchema = createInsertSchema(posts).pick({
 // Connection model
 export const connections = pgTable("connections", {
   id: serial("id").primaryKey(),
-  requesterId: integer("requester_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  recipientId: integer("recipient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  requesterId: varchar("requester_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  recipientId: varchar("recipient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   status: text("status").notNull(), // "pending", "accepted", "rejected"
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -146,8 +146,8 @@ export const insertConnectionSchema = createInsertSchema(connections).pick({
 // Message model
 export const messages = pgTable("messages", {
   id: serial("id").primaryKey(),
-  senderId: integer("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  recipientId: integer("recipient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  senderId: varchar("sender_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  recipientId: varchar("recipient_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
   isRead: boolean("is_read").default(false),
   createdAt: timestamp("created_at").defaultNow(),
