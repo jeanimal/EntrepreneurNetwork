@@ -58,26 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AUTH ROUTES
   // The main login/logout routes are handled by replitAuth.ts
-  
-  // User data endpoint for authenticated users
-  apiRouter.get("/auth/user", isAuthenticated, async (req: any, res) => {
-    try {
-      // Get user ID from the claims
-      const userId = getUserId(req);
-      
-      // Fetch user from database
-      const user = await storage.getUser(userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // The /api/auth/user endpoint is also handled by replitAuth.ts
   
   // The getUserId helper is already defined above
 
