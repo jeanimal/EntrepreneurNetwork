@@ -73,7 +73,7 @@ export interface IStorage {
 
 // In-memory storage implementation
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
+  private users: Map<string, User>;
   private projects: Map<number, Project>;
   private resources: Map<number, Resource>;
   private skills: Map<number, Skill>;
@@ -81,7 +81,7 @@ export class MemStorage implements IStorage {
   private connections: Map<number, Connection>;
   private messages: Map<number, Message>;
   
-  private userIdCounter: number;
+  private userIdCounter: number; // Will generate string IDs using this counter
   private projectIdCounter: number;
   private resourceIdCounter: number;
   private skillIdCounter: number;
@@ -111,7 +111,7 @@ export class MemStorage implements IStorage {
   }
   
   // User operations
-  async getUser(id: number): Promise<User | undefined> {
+  async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
   
@@ -122,18 +122,20 @@ export class MemStorage implements IStorage {
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!email) return undefined;
+    
     return Array.from(this.users.values()).find(
-      (user) => user.email.toLowerCase() === email.toLowerCase()
+      (user) => user.email && user.email.toLowerCase() === email.toLowerCase()
     );
   }
   
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
+    const idStr = String(this.userIdCounter++);
     const createdAt = new Date();
     // Make sure all required fields are provided
     const user: User = { 
       ...insertUser, 
-      id, 
+      id: idStr, // Use string ID
       createdAt,
       profileCompletion: 25,
       bio: insertUser.bio || null,
@@ -142,11 +144,11 @@ export class MemStorage implements IStorage {
       company: insertUser.company || null,
       avatarUrl: insertUser.avatarUrl || null
     };
-    this.users.set(id, user);
+    this.users.set(idStr, user);
     return user;
   }
   
-  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+  async updateUser(id: string, userData: Partial<User>): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
     
@@ -155,13 +157,65 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
   
+  // Required for Replit Auth
+  async upsertUser(userData: { 
+    id: string, 
+    username: string, 
+    email?: string | null, 
+    firstName?: string | null, 
+    lastName?: string | null,
+    bio?: string | null,
+    profileImageUrl?: string | null
+  }): Promise<User> {
+    let user = this.users.get(userData.id);
+    
+    if (user) {
+      // Update existing user
+      user = { 
+        ...user, 
+        username: userData.username,
+        email: userData.email || user.email,
+        firstName: userData.firstName || user.firstName,
+        lastName: userData.lastName || user.lastName,
+        bio: userData.bio || user.bio,
+        avatarUrl: userData.profileImageUrl || user.avatarUrl,
+        updatedAt: new Date()
+      };
+      this.users.set(userData.id, user);
+      return user;
+    } else {
+      // Create new user
+      const newUser: User = {
+        id: userData.id,
+        username: userData.username,
+        email: userData.email || null,
+        name: userData.firstName && userData.lastName ? 
+              `${userData.firstName} ${userData.lastName}` : 
+              userData.username,
+        firstName: userData.firstName || null,
+        lastName: userData.lastName || null,
+        bio: userData.bio || null,
+        headline: null,
+        location: null,
+        company: null,
+        avatarUrl: userData.profileImageUrl || null,
+        profileCompletion: 25,
+        userType: 'entrepreneur',
+        createdAt: new Date(),
+        updatedAt: null
+      };
+      this.users.set(userData.id, newUser);
+      return newUser;
+    }
+  }
+  
   async searchUsers(query: string): Promise<User[]> {
     if (!query) return Array.from(this.users.values());
     
     const lowerQuery = query.toLowerCase();
     return Array.from(this.users.values()).filter(
       (user) => 
-        user.name.toLowerCase().includes(lowerQuery) ||
+        (user.name && user.name.toLowerCase().includes(lowerQuery)) ||
         user.username.toLowerCase().includes(lowerQuery) ||
         (user.bio && user.bio.toLowerCase().includes(lowerQuery)) ||
         (user.headline && user.headline.toLowerCase().includes(lowerQuery)) ||
@@ -174,7 +228,7 @@ export class MemStorage implements IStorage {
     return this.projects.get(id);
   }
   
-  async getProjectsByUserId(userId: number): Promise<Project[]> {
+  async getProjectsByUserId(userId: string): Promise<Project[]> {
     return Array.from(this.projects.values()).filter(
       (project) => project.userId === userId
     );
@@ -222,7 +276,7 @@ export class MemStorage implements IStorage {
   }
   
   // Resource operations
-  async getResourcesByUserId(userId: number): Promise<Resource[]> {
+  async getResourcesByUserId(userId: string): Promise<Resource[]> {
     return Array.from(this.resources.values()).filter(
       (resource) => resource.userId === userId
     );
@@ -253,7 +307,7 @@ export class MemStorage implements IStorage {
   }
   
   // Skill operations
-  async getSkillsByUserId(userId: number): Promise<Skill[]> {
+  async getSkillsByUserId(userId: string): Promise<Skill[]> {
     return Array.from(this.skills.values()).filter(
       (skill) => skill.userId === userId
     );
@@ -300,7 +354,7 @@ export class MemStorage implements IStorage {
     });
   }
   
-  async getPostsByUserId(userId: number): Promise<Post[]> {
+  async getPostsByUserId(userId: string): Promise<Post[]> {
     return Array.from(this.posts.values()).filter(
       (post) => post.userId === userId
     ).sort((a, b) => {
@@ -330,7 +384,7 @@ export class MemStorage implements IStorage {
   }
   
   // Connection operations
-  async getConnections(userId: number): Promise<Connection[]> {
+  async getConnections(userId: string): Promise<Connection[]> {
     return Array.from(this.connections.values()).filter(
       (connection) => 
         (connection.requesterId === userId || connection.recipientId === userId) && 
@@ -338,7 +392,7 @@ export class MemStorage implements IStorage {
     );
   }
   
-  async getPendingConnections(userId: number): Promise<Connection[]> {
+  async getPendingConnections(userId: string): Promise<Connection[]> {
     return Array.from(this.connections.values()).filter(
       (connection) => 
         connection.recipientId === userId && 
@@ -363,7 +417,7 @@ export class MemStorage implements IStorage {
     return updatedConnection;
   }
   
-  async getConnectionCount(userId: number): Promise<number> {
+  async getConnectionCount(userId: string): Promise<number> {
     return (await this.getConnections(userId)).length;
   }
   
