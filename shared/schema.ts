@@ -1,42 +1,56 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, foreignKey, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, foreignKey, primaryKey, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+// Session storage table for Replit Auth
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
 // User model
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull(),
+  id: varchar("id").primaryKey().notNull(), // Changed to string for Replit Auth
+  username: varchar("username").unique().notNull(),
+  email: varchar("email").unique(),
+  name: varchar("name"),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
   bio: text("bio"),
   location: text("location"),
   headline: text("headline"),
   company: text("company"),
-  avatarUrl: text("avatar_url"),
-  userType: text("user_type").notNull(), // "entrepreneur" or "investor"
+  profileImageUrl: varchar("profile_image_url"), // Profile image from Replit
+  avatarUrl: text("avatar_url"), // Custom uploaded avatar
+  userType: text("user_type").default("entrepreneur"), // "entrepreneur" or "investor"
   profileCompletion: integer("profile_completion").default(0),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  email: true,
-  name: true,
-  bio: true,
-  location: true,
-  headline: true,
-  company: true,
-  avatarUrl: true,
-  userType: true,
+export const insertUserSchema = createInsertSchema(users);
+
+// Upsert schema for Replit Auth users
+export const upsertUserSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  email: z.string().optional().nullable(),
+  firstName: z.string().optional().nullable(),
+  lastName: z.string().optional().nullable(),
+  bio: z.string().optional().nullable(),
+  profileImageUrl: z.string().optional().nullable(),
 });
 
 // Project/Side Gig model
 export const projects = pgTable("projects", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text("title").notNull(),
   description: text("description").notNull(),
   status: text("status").notNull(), // "active", "planning", "completed", etc.
@@ -68,7 +82,7 @@ export const resourceCategories = [
 // Resource Grid model
 export const resources = pgTable("resources", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   category: text("category").notNull(),
   have: text("have").array(),
   need: text("need").array(),
@@ -85,7 +99,7 @@ export const insertResourceSchema = createInsertSchema(resources).pick({
 // Skills model
 export const skills = pgTable("skills", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text("name").notNull(),
   rating: integer("rating").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
@@ -100,7 +114,7 @@ export const insertSkillSchema = createInsertSchema(skills).pick({
 // Post/Feed model
 export const posts = pgTable("posts", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text("content").notNull(),
   tags: text("tags").array(),
   type: text("type").notNull(), // "update", "project", "opportunity"
