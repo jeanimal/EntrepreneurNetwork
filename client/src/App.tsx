@@ -43,13 +43,27 @@ function Router() {
       <Navbar />
       <div className="flex-grow">
         <Switch>
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
+          {/* Public routes */}
           <Route path="/" component={Home} />
-          <Route path="/network" component={Network} />
-          <Route path="/projects" component={Projects} />
-          <Route path="/messages" component={Messages} />
-          <Route path="/profile/:id" component={Profile} />
+          
+          {/* These routes are no longer needed with Replit Auth */}
+          {/* <Route path="/login" component={Login} /> */}
+          {/* <Route path="/register" component={Register} /> */}
+          
+          {/* Protected routes */}
+          <Route path="/network">
+            <AuthenticatedRoute component={Network} path="/network" />
+          </Route>
+          <Route path="/projects">
+            <AuthenticatedRoute component={Projects} path="/projects" />
+          </Route>
+          <Route path="/messages">
+            <AuthenticatedRoute component={Messages} path="/messages" />
+          </Route>
+          <Route path="/profile/:id">
+            {(params) => <AuthenticatedRoute component={Profile} path={`/profile/${params.id}`} />}
+          </Route>
+          
           <Route component={NotFound} />
         </Switch>
       </div>

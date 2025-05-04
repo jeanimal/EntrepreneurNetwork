@@ -18,8 +18,6 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 // We don't need a custom session type for Replit Auth
 // as the session is handled by passport
 
-
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
   await setupAuth(app);

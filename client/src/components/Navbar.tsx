@@ -31,9 +31,9 @@ export default function Navbar() {
   
   const hasNotifications = unreadMessageCount > 0 || pendingConnectionCount > 0;
 
-  const handleLogout = async () => {
-    await logout();
-    setLocation("/login");
+  const handleLogout = () => {
+    logout();
+    // No need to set location as Replit Auth will handle the redirect
   };
 
   const isActive = (path: string) => location === path;
@@ -129,14 +129,17 @@ export default function Navbar() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="rounded-full">
                         <Avatar>
-                          <AvatarImage src={user.avatarUrl || ""} alt={user.name} />
-                          <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                          <AvatarImage src={user.avatarUrl || ""} alt={(user.firstName || user.username)} />
+                          <AvatarFallback>
+                            {user.firstName ? user.firstName.substring(0, 1).toUpperCase() : 
+                             user.username ? user.username.substring(0, 1).toUpperCase() : "U"}
+                          </AvatarFallback>
                         </Avatar>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <div className="font-medium text-sm px-2 py-1.5">
-                        {user.name}
+                        {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}
                       </div>
                       <div className="text-xs text-gray-500 px-2 pb-1.5">
                         {user.email}
@@ -168,12 +171,12 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="flex items-center space-x-4">
-              <Link href="/login">
-                <Button variant="ghost">Log in</Button>
-              </Link>
-              <Link href="/register">
-                <Button>Sign up</Button>
-              </Link>
+              <Button variant="ghost" onClick={() => window.location.href = "/api/login"}>
+                Log in
+              </Button>
+              <Button onClick={() => window.location.href = "/api/login"}>
+                Sign up
+              </Button>
             </div>
           )}
           
