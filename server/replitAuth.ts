@@ -28,18 +28,18 @@ export function getSession() {
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true, // Create the sessions table if missing
     ttl: sessionTtl,
     tableName: "sessions",
   });
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'temporarysecretforentrepreneurconnect',
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production', // Only secure in production
       maxAge: sessionTtl,
     },
   });
@@ -58,16 +58,22 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
-  // Upsert user to database
-  await storage.upsertUser({
-    id: claims["sub"],
-    username: claims["username"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
-    bio: claims["bio"],
-    profileImageUrl: claims["profile_image_url"],
-  });
+  try {
+    const userData = {
+      id: claims["sub"],
+      username: claims["username"],
+      email: claims["email"],
+      firstName: claims["first_name"],
+      lastName: claims["last_name"],
+      bio: claims["bio"],
+      profileImageUrl: claims["profile_image_url"],
+    };
+    console.log("Upserting user with data:", JSON.stringify(userData));
+    await storage.upsertUser(userData);
+  } catch (error) {
+    console.error("Error upserting user:", error);
+    throw error;
+  }
 }
 
 export async function setupAuth(app: Express) {
@@ -82,10 +88,15 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
-    updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
-    verified(null, user);
+    try {
+      const user = {};
+      updateUserSession(user, tokens);
+      await upsertUser(tokens.claims());
+      verified(null, user);
+    } catch (error) {
+      console.error("Error in verify function:", error);
+      verified(error as Error);
+    }
   };
 
   for (const domain of process.env
@@ -129,12 +140,25 @@ export async function setupAuth(app: Express) {
       );
     });
   });
+  
+  // Route to get the current authenticated user
+  app.get("/api/auth/user", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user?.expires_at) {
+    console.log("User not authenticated or missing expires_at:", req.isAuthenticated(), user?.expires_at);
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -143,8 +167,10 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return next();
   }
 
+  console.log("Token expired, attempting refresh");
   const refreshToken = user.refresh_token;
   if (!refreshToken) {
+    console.log("No refresh token available");
     return res.redirect("/api/login");
   }
 
@@ -152,8 +178,10 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     const config = await getOidcConfig();
     const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
     updateUserSession(user, tokenResponse);
+    console.log("Token refreshed successfully");
     return next();
   } catch (error) {
+    console.error("Error refreshing token:", error);
     return res.redirect("/api/login");
   }
 };
