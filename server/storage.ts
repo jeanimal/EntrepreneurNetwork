@@ -845,62 +845,64 @@ export class DatabaseStorage implements IStorage {
     id: string, 
     username: string, 
     email?: string | null, 
-    firstName?: string | null, 
-    lastName?: string | null,
+    name?: string | null,
     bio?: string | null,
-    profileImageUrl?: string | null
+    avatar_url?: string | null,
+    user_type?: string | null
   }): Promise<User> {
-    // Try to find the user first
-    const existingUser = await this.getUser(userData.id);
-    
-    // If we have a name from both first and last name, combine them
-    const name = userData.firstName && userData.lastName 
-      ? `${userData.firstName} ${userData.lastName}`
-      : existingUser?.name ?? userData.username;
-    
-    // Calculate profile completion
-    let profileCompletion = 20; // Base score for having an account
-    if (userData.email) profileCompletion += 10;
-    if (userData.firstName && userData.lastName) profileCompletion += 10;
-    if (userData.bio) profileCompletion += 10;
-    if (userData.profileImageUrl) profileCompletion += 10;
-    if (existingUser?.location) profileCompletion += 10;
-    if (existingUser?.headline) profileCompletion += 10;
-    if (existingUser?.company) profileCompletion += 10;
-    if (existingUser?.avatarUrl) profileCompletion += 10;
-    
-    // Prepare data for upsert operation
-    const upsertData = {
-      id: userData.id,
-      username: userData.username,
-      email: userData.email || existingUser?.email || null,
-      name,
-      firstName: userData.firstName || existingUser?.firstName || null,
-      lastName: userData.lastName || existingUser?.lastName || null,
-      bio: userData.bio || existingUser?.bio || null,
-      profileImageUrl: userData.profileImageUrl || existingUser?.profileImageUrl || null,
-      profileCompletion,
+    try {
+      // Try to find the user first
+      const existingUser = await this.getUser(userData.id);
+      
+      // Calculate profile completion
+      let profile_completion = 20; // Base score for having an account
+      if (userData.email) profile_completion += 10;
+      if (userData.name) profile_completion += 10;
+      if (userData.bio) profile_completion += 10;
+      if (userData.avatar_url) profile_completion += 10;
+      if (existingUser?.location) profile_completion += 10;
+      if (existingUser?.headline) profile_completion += 10;
+      if (existingUser?.company) profile_completion += 10;
+      
+      // Prepare data for upsert operation - only include fields that exist in the database
+      const upsertData: any = {
+        id: userData.id,
+        username: userData.username,
+        email: userData.email || existingUser?.email || null,
+        name: userData.name || existingUser?.name || null,
+        bio: userData.bio || existingUser?.bio || null,
+        avatar_url: userData.avatar_url || existingUser?.avatar_url || null,
+        user_type: userData.user_type || existingUser?.user_type || "entrepreneur",
+        profile_completion,
+      };
+      
+      // Add created_at only for new users
+      if (!existingUser) {
+        upsertData.created_at = new Date();
+      }
       
       // Keep existing values if they exist
-      location: existingUser?.location || null,
-      headline: existingUser?.headline || null,
-      company: existingUser?.company || null,
-      avatarUrl: existingUser?.avatarUrl || null,
-      userType: existingUser?.userType || "entrepreneur",
-      updatedAt: new Date()
-    };
-    
-    // Perform upsert
-    const [user] = await db
-      .insert(users)
-      .values(upsertData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: upsertData
-      })
-      .returning();
+      if (existingUser?.location) upsertData.location = existingUser.location;
+      if (existingUser?.headline) upsertData.headline = existingUser.headline;
+      if (existingUser?.company) upsertData.company = existingUser.company;
       
-    return user;
+      console.log("Upserting with data:", upsertData);
+      
+      // Perform upsert
+      const [user] = await db
+        .insert(users)
+        .values(upsertData)
+        .onConflictDoUpdate({
+          target: users.id,
+          set: upsertData
+        })
+        .returning();
+        
+      return user;
+    } catch (error) {
+      console.error("Error in database upsertUser:", error);
+      throw error;
+    }
   }
 
   async searchUsers(query: string): Promise<User[]> {

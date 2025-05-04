@@ -60,14 +60,19 @@ async function upsertUser(
   claims: any,
 ) {
   try {
+    // Match user data to existing database columns
     const userData = {
       id: claims["sub"],
       username: claims["username"],
       email: claims["email"],
-      firstName: claims["first_name"],
-      lastName: claims["last_name"],
+      // Combine first_name and last_name to name field
+      name: claims["first_name"] && claims["last_name"] 
+        ? `${claims["first_name"]} ${claims["last_name"]}` 
+        : claims["first_name"] || claims["username"],
       bio: claims["bio"],
-      profileImageUrl: claims["profile_image_url"],
+      // Use profile_image_url as avatar_url
+      avatar_url: claims["profile_image_url"],
+      user_type: "entrepreneur", // Default user type
     };
     console.log("Upserting user with data:", JSON.stringify(userData));
     await storage.upsertUser(userData);
