@@ -23,7 +23,7 @@ export default function Landing() {
                 <Button 
                   size="lg"
                   onClick={() => window.location.href = "/api/login"}
-                  className="bg-gradient-to-r from-white to-pink-100 text-primary-900 hover:bg-white hover:text-black px-8 py-3 text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                  className="bg-gradient-to-r from-white to-pink-100 text-black hover:bg-white hover:text-black px-8 py-3 text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                 >
                   Create Account
                   <ArrowRight className="ml-2 h-5 w-5" />
