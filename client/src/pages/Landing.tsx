@@ -25,44 +25,46 @@ export default function Landing() {
                   onClick={() => window.location.href = "/api/login"}
                   className="bg-white text-primary-700 hover:bg-gray-100 hover:text-primary-800 px-8 py-3 text-lg"
                 >
-                  Get Started
+                  Create Account
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
-                {!isAuthenticated && (
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    onClick={() => window.location.href = "/api/login"}
-                    className="border-white text-white hover:bg-white/10 px-8 py-3 text-lg"
-                  >
-                    Log In
-                  </Button>
-                )}
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => window.location.href = "/api/login"}
+                  className="border-white text-white hover:bg-white/10 px-8 py-3 text-lg"
+                >
+                  Log In
+                </Button>
               </div>
             </div>
             <div className="order-1 md:order-2 flex justify-center">
               <div className="relative w-full max-w-md">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-                <svg viewBox="0 0 200 200" className="w-full">
-                  <path 
-                    fill="#FFFFFF" 
-                    d="M48.8,-51.2C61.9,-37.3,70.6,-18.6,71.5,0.9C72.4,20.4,65.6,40.8,52.4,55.2C39.2,69.7,19.6,78.1,0.6,77.5C-18.4,76.9,-36.8,67.2,-51.5,52.8C-66.1,38.4,-77.1,19.2,-77.8,-0.7C-78.5,-20.7,-68.8,-41.3,-54.1,-55.2C-39.3,-69.1,-19.7,-76.2,-0.5,-75.7C18.6,-75.1,37.1,-66.9,48.8,-51.2Z" 
-                    transform="translate(100 100)" 
-                    className="drop-shadow-xl"
-                  />
-                </svg>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full p-6">
-                  <div className="flex justify-center">
+                {/* Pink splash animation */}
+                <div className="absolute inset-0 bg-pink-500 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+                <div className="absolute -inset-6 bg-gradient-to-r from-pink-400 to-purple-600 rounded-full blur-2xl opacity-20 animate-pulse" style={{ animationDuration: '4s' }}></div>
+                <div className="absolute -inset-4 bg-gradient-to-br from-pink-300 to-purple-400 rounded-full blur-xl opacity-10 animate-pulse" style={{ animationDuration: '3s', animationDelay: '0.5s' }}></div>
+                
+                {/* Circular background */}
+                <div className="relative bg-gradient-to-br from-pink-100 to-white rounded-full p-8 shadow-xl">
+                  <div className="absolute top-0 right-0 -mr-4 -mt-4 bg-yellow-400 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
+                    <Lightbulb className="h-8 w-8 text-white" />
+                  </div>
+                  
+                  <div className="absolute bottom-0 left-0 -ml-4 -mb-4 bg-green-500 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
+                    <TrendingUp className="h-8 w-8 text-white" />
+                  </div>
+                  
+                  {/* Handshake in center */}
+                  <div className="flex items-center justify-center w-full h-full p-4">
                     <div className="relative">
-                      <div className="absolute -top-4 -left-4 bg-yellow-400 w-20 h-20 rounded-full flex items-center justify-center">
-                        <Lightbulb className="h-10 w-10 text-white" />
+                      <div className="bg-gradient-to-r from-primary-600 to-primary-800 w-32 h-32 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-500 hover:scale-110">
+                        <HandshakeIcon className="h-16 w-16 text-white" />
                       </div>
-                      <div className="absolute -bottom-4 -right-4 bg-green-500 w-16 h-16 rounded-full flex items-center justify-center">
-                        <TrendingUp className="h-8 w-8 text-white" />
-                      </div>
-                      <div className="bg-white text-primary-800 w-40 h-40 rounded-full flex items-center justify-center shadow-lg">
-                        <HandshakeIcon className="h-20 w-20" />
-                      </div>
+                      
+                      {/* Extra animated rings */}
+                      <div className="absolute inset-0 border-4 border-pink-200 rounded-full animate-ping" style={{ animationDuration: '3s' }}></div>
+                      <div className="absolute inset-0 border-2 border-pink-300 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.5s' }}></div>
                     </div>
                   </div>
                 </div>
@@ -127,13 +129,23 @@ export default function Landing() {
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
             Take the first step toward building meaningful connections and growing your ventures.
           </p>
-          <Button 
-            size="lg"
-            onClick={() => window.location.href = "/api/login"}
-            className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-6 text-lg"
-          >
-            Join Now
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg"
+              onClick={() => window.location.href = "/api/login"}
+              className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-6 text-lg"
+            >
+              Create New Account
+            </Button>
+            <Button 
+              variant="outline"
+              size="lg"
+              onClick={() => window.location.href = "/api/login"}
+              className="border-primary-600 text-primary-700 hover:bg-primary-50 px-8 py-6 text-lg"
+            >
+              Log In to Existing Account
+            </Button>
+          </div>
         </div>
       </section>
 
