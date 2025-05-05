@@ -8,44 +8,44 @@ export default function Landing() {
   
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Hero Section */}
+      {/* Hero Section - 50% height reduction */}
       <section className="bg-gradient-to-br from-primary-500 to-primary-800 text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
           <div className="flex flex-col items-center text-center">
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 max-w-3xl">
+            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 max-w-3xl">
               Connect, Collaborate, Create.
             </h1>
-            <p className="text-xl md:text-2xl max-w-2xl mb-12">
+            <p className="text-lg md:text-xl max-w-2xl mb-4">
               Join a vibrant community where founders and investors meet to build the future together.
             </p>
 
-            {/* Centered image */}
-            <div className="relative w-full max-w-md mx-auto mt-4">
+            {/* Centered image - reduced size */}
+            <div className="relative w-full max-w-xs mx-auto mt-2">
               {/* Pink splash animation */}
-              <div className="absolute inset-0 bg-pink-500 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-              <div className="absolute -inset-6 bg-gradient-to-r from-pink-400 to-purple-600 rounded-full blur-2xl opacity-20 animate-pulse" style={{ animationDuration: '4s' }}></div>
-              <div className="absolute -inset-4 bg-gradient-to-br from-pink-300 to-purple-400 rounded-full blur-xl opacity-10 animate-pulse" style={{ animationDuration: '3s', animationDelay: '0.5s' }}></div>
+              <div className="absolute inset-0 bg-pink-500 rounded-full blur-2xl opacity-30 animate-pulse"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-pink-400 to-purple-600 rounded-full blur-xl opacity-20 animate-pulse" style={{ animationDuration: '4s' }}></div>
+              <div className="absolute -inset-2 bg-gradient-to-br from-pink-300 to-purple-400 rounded-full blur-lg opacity-10 animate-pulse" style={{ animationDuration: '3s', animationDelay: '0.5s' }}></div>
               
               {/* Circular background */}
-              <div className="relative bg-gradient-to-br from-pink-100 to-white rounded-full p-8 shadow-xl">
-                <div className="absolute top-0 right-0 -mr-4 -mt-4 bg-yellow-400 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
-                  <Lightbulb className="h-8 w-8 text-white" />
+              <div className="relative bg-gradient-to-br from-pink-100 to-white rounded-full p-5 shadow-xl">
+                <div className="absolute top-0 right-0 -mr-2 -mt-2 bg-yellow-400 w-10 h-10 rounded-full flex items-center justify-center shadow-lg">
+                  <Lightbulb className="h-5 w-5 text-white" />
                 </div>
                 
-                <div className="absolute bottom-0 left-0 -ml-4 -mb-4 bg-green-500 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
-                  <TrendingUp className="h-8 w-8 text-white" />
+                <div className="absolute bottom-0 left-0 -ml-2 -mb-2 bg-green-500 w-10 h-10 rounded-full flex items-center justify-center shadow-lg">
+                  <TrendingUp className="h-5 w-5 text-white" />
                 </div>
                 
                 {/* Handshake in center */}
-                <div className="flex items-center justify-center w-full h-full p-4">
+                <div className="flex items-center justify-center w-full h-full p-2">
                   <div className="relative">
-                    <div className="bg-gradient-to-r from-primary-600 to-primary-800 w-32 h-32 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-500 hover:scale-110">
-                      <HandshakeIcon className="h-16 w-16 text-white" />
+                    <div className="bg-gradient-to-r from-primary-600 to-primary-800 w-20 h-20 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-500 hover:scale-110">
+                      <HandshakeIcon className="h-10 w-10 text-white" />
                     </div>
                     
                     {/* Extra animated rings */}
-                    <div className="absolute inset-0 border-4 border-pink-200 rounded-full animate-ping" style={{ animationDuration: '3s' }}></div>
-                    <div className="absolute inset-0 border-2 border-pink-300 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.5s' }}></div>
+                    <div className="absolute inset-0 border-2 border-pink-200 rounded-full animate-ping" style={{ animationDuration: '3s' }}></div>
+                    <div className="absolute inset-0 border border-pink-300 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.5s' }}></div>
                   </div>
                 </div>
               </div>
