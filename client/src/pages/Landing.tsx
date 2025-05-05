@@ -23,7 +23,7 @@ export default function Landing() {
                 <Button 
                   size="lg"
                   onClick={() => window.location.href = "/api/login"}
-                  className="bg-white text-primary-700 hover:bg-gray-100 hover:text-primary-800 px-8 py-3 text-lg"
+                  className="bg-gradient-to-r from-white to-pink-100 text-primary-700 hover:bg-white hover:text-primary-800 px-8 py-3 text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                 >
                   Create Account
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -32,7 +32,7 @@ export default function Landing() {
                   variant="outline" 
                   size="lg"
                   onClick={() => window.location.href = "/api/login"}
-                  className="border-white text-white hover:bg-white/10 px-8 py-3 text-lg"
+                  className="border-white border-2 text-white hover:bg-white/20 px-8 py-3 text-lg shadow-md"
                 >
                   Log In
                 </Button>
@@ -133,7 +133,7 @@ export default function Landing() {
             <Button 
               size="lg"
               onClick={() => window.location.href = "/api/login"}
-              className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-6 text-lg"
+              className="bg-gradient-to-r from-pink-600 to-primary-700 text-white px-8 py-6 text-lg font-bold shadow-lg hover:shadow-xl hover:bg-primary-700 hover:scale-105 transition-all duration-200"
             >
               Create New Account
             </Button>
@@ -141,7 +141,7 @@ export default function Landing() {
               variant="outline"
               size="lg"
               onClick={() => window.location.href = "/api/login"}
-              className="border-primary-600 text-primary-700 hover:bg-primary-50 px-8 py-6 text-lg"
+              className="border-primary-600 border-2 text-primary-700 hover:bg-primary-50 px-8 py-6 text-lg shadow-md"
             >
               Log In to Existing Account
             </Button>
@@ -163,7 +163,7 @@ export default function Landing() {
                   variant="default"
                   size="sm"
                   onClick={() => window.location.href = "/api/login"}
-                  className="bg-primary-600 hover:bg-primary-700 text-white"
+                  className="bg-gradient-to-r from-pink-600 to-primary-700 text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
                 >
                   Create Account
                 </Button>
@@ -171,7 +171,7 @@ export default function Landing() {
                   variant="outline"
                   size="sm"
                   onClick={() => window.location.href = "/api/login"}
-                  className="border-gray-400 text-gray-100 hover:bg-gray-800 hover:text-white"
+                  className="border-2 border-pink-400 text-gray-100 hover:bg-gray-800 hover:border-white hover:text-white shadow-sm"
                 >
                   Log In
                 </Button>
