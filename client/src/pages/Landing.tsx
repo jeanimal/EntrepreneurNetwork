@@ -19,24 +19,7 @@ export default function Landing() {
               <p className="text-xl md:text-2xl max-w-xl mb-8">
                 Join a vibrant community where founders and investors meet to build the future together.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg"
-                  onClick={() => window.location.href = "/api/login"}
-                  className="bg-gradient-to-r from-white to-pink-100 text-black hover:bg-white hover:text-black px-8 py-3 text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-                >
-                  Create Account
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => window.location.href = "/api/login"}
-                  className="border-white border-2 bg-white/20 text-black hover:bg-white/40 hover:text-black px-8 py-3 text-lg shadow-md"
-                >
-                  Log In
-                </Button>
-              </div>
+              {/* Buttons removed from hero section as requested */}
             </div>
             <div className="order-1 md:order-2 flex justify-center">
               <div className="relative w-full max-w-md">
