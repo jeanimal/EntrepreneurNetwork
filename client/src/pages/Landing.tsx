@@ -156,6 +156,26 @@ export default function Landing() {
             <div className="mb-6 md:mb-0">
               <h2 className="text-2xl font-bold">Entrepreneur Network</h2>
               <p className="text-gray-400 mt-2">Connect. Collaborate. Succeed.</p>
+              
+              {/* Footer auth buttons */}
+              <div className="flex gap-4 mt-6">
+                <Button 
+                  variant="default"
+                  size="sm"
+                  onClick={() => window.location.href = "/api/login"}
+                  className="bg-primary-600 hover:bg-primary-700 text-white"
+                >
+                  Create Account
+                </Button>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.href = "/api/login"}
+                  className="border-gray-400 text-gray-100 hover:bg-gray-800 hover:text-white"
+                >
+                  Log In
+                </Button>
+              </div>
             </div>
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-8">
               <a href="#" className="text-gray-300 hover:text-white">About Us</a>
