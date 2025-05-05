@@ -23,7 +23,7 @@ export default function Landing() {
                 <Button 
                   size="lg"
                   onClick={() => window.location.href = "/api/login"}
-                  className="bg-gradient-to-r from-white to-pink-100 text-primary-700 hover:bg-white hover:text-primary-800 px-8 py-3 text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                  className="bg-gradient-to-r from-white to-pink-100 text-primary-900 hover:bg-white hover:text-black px-8 py-3 text-lg font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                 >
                   Create Account
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -32,7 +32,7 @@ export default function Landing() {
                   variant="outline" 
                   size="lg"
                   onClick={() => window.location.href = "/api/login"}
-                  className="border-white border-2 text-white hover:bg-white/20 px-8 py-3 text-lg shadow-md"
+                  className="border-white border-2 bg-white/20 text-black hover:bg-white/40 hover:text-black px-8 py-3 text-lg shadow-md"
                 >
                   Log In
                 </Button>
@@ -133,7 +133,7 @@ export default function Landing() {
             <Button 
               size="lg"
               onClick={() => window.location.href = "/api/login"}
-              className="bg-gradient-to-r from-pink-600 to-primary-700 text-white px-8 py-6 text-lg font-bold shadow-lg hover:shadow-xl hover:bg-primary-700 hover:scale-105 transition-all duration-200"
+              className="bg-gradient-to-r from-pink-400 to-pink-200 text-black px-8 py-6 text-lg font-bold shadow-lg hover:shadow-xl hover:bg-pink-300 hover:scale-105 transition-all duration-200"
             >
               Create New Account
             </Button>
@@ -141,7 +141,7 @@ export default function Landing() {
               variant="outline"
               size="lg"
               onClick={() => window.location.href = "/api/login"}
-              className="border-primary-600 border-2 text-primary-700 hover:bg-primary-50 px-8 py-6 text-lg shadow-md"
+              className="border-primary-500 border-2 bg-white text-black hover:bg-primary-50 px-8 py-6 text-lg shadow-md"
             >
               Log In to Existing Account
             </Button>
@@ -156,26 +156,6 @@ export default function Landing() {
             <div className="mb-6 md:mb-0">
               <h2 className="text-2xl font-bold">Entrepreneur Network</h2>
               <p className="text-gray-400 mt-2">Connect. Collaborate. Succeed.</p>
-              
-              {/* Footer auth buttons */}
-              <div className="flex gap-4 mt-6">
-                <Button 
-                  variant="default"
-                  size="sm"
-                  onClick={() => window.location.href = "/api/login"}
-                  className="bg-gradient-to-r from-pink-600 to-primary-700 text-white font-semibold shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200"
-                >
-                  Create Account
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.location.href = "/api/login"}
-                  className="border-2 border-pink-400 text-gray-100 hover:bg-gray-800 hover:border-white hover:text-white shadow-sm"
-                >
-                  Log In
-                </Button>
-              </div>
             </div>
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-8">
               <a href="#" className="text-gray-300 hover:text-white">About Us</a>
