@@ -11,44 +11,41 @@ export default function Landing() {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-primary-500 to-primary-800 text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div className="order-2 md:order-1">
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-                Connect, Collaborate, Create.
-              </h1>
-              <p className="text-xl md:text-2xl max-w-xl mb-8">
-                Join a vibrant community where founders and investors meet to build the future together.
-              </p>
-              {/* Buttons removed from hero section as requested */}
-            </div>
-            <div className="order-1 md:order-2 flex justify-center">
-              <div className="relative w-full max-w-md">
-                {/* Pink splash animation */}
-                <div className="absolute inset-0 bg-pink-500 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-                <div className="absolute -inset-6 bg-gradient-to-r from-pink-400 to-purple-600 rounded-full blur-2xl opacity-20 animate-pulse" style={{ animationDuration: '4s' }}></div>
-                <div className="absolute -inset-4 bg-gradient-to-br from-pink-300 to-purple-400 rounded-full blur-xl opacity-10 animate-pulse" style={{ animationDuration: '3s', animationDelay: '0.5s' }}></div>
+          <div className="flex flex-col items-center text-center">
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 max-w-3xl">
+              Connect, Collaborate, Create.
+            </h1>
+            <p className="text-xl md:text-2xl max-w-2xl mb-12">
+              Join a vibrant community where founders and investors meet to build the future together.
+            </p>
+
+            {/* Centered image */}
+            <div className="relative w-full max-w-md mx-auto mt-4">
+              {/* Pink splash animation */}
+              <div className="absolute inset-0 bg-pink-500 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+              <div className="absolute -inset-6 bg-gradient-to-r from-pink-400 to-purple-600 rounded-full blur-2xl opacity-20 animate-pulse" style={{ animationDuration: '4s' }}></div>
+              <div className="absolute -inset-4 bg-gradient-to-br from-pink-300 to-purple-400 rounded-full blur-xl opacity-10 animate-pulse" style={{ animationDuration: '3s', animationDelay: '0.5s' }}></div>
+              
+              {/* Circular background */}
+              <div className="relative bg-gradient-to-br from-pink-100 to-white rounded-full p-8 shadow-xl">
+                <div className="absolute top-0 right-0 -mr-4 -mt-4 bg-yellow-400 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
+                  <Lightbulb className="h-8 w-8 text-white" />
+                </div>
                 
-                {/* Circular background */}
-                <div className="relative bg-gradient-to-br from-pink-100 to-white rounded-full p-8 shadow-xl">
-                  <div className="absolute top-0 right-0 -mr-4 -mt-4 bg-yellow-400 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
-                    <Lightbulb className="h-8 w-8 text-white" />
-                  </div>
-                  
-                  <div className="absolute bottom-0 left-0 -ml-4 -mb-4 bg-green-500 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
-                    <TrendingUp className="h-8 w-8 text-white" />
-                  </div>
-                  
-                  {/* Handshake in center */}
-                  <div className="flex items-center justify-center w-full h-full p-4">
-                    <div className="relative">
-                      <div className="bg-gradient-to-r from-primary-600 to-primary-800 w-32 h-32 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-500 hover:scale-110">
-                        <HandshakeIcon className="h-16 w-16 text-white" />
-                      </div>
-                      
-                      {/* Extra animated rings */}
-                      <div className="absolute inset-0 border-4 border-pink-200 rounded-full animate-ping" style={{ animationDuration: '3s' }}></div>
-                      <div className="absolute inset-0 border-2 border-pink-300 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.5s' }}></div>
+                <div className="absolute bottom-0 left-0 -ml-4 -mb-4 bg-green-500 w-16 h-16 rounded-full flex items-center justify-center shadow-lg">
+                  <TrendingUp className="h-8 w-8 text-white" />
+                </div>
+                
+                {/* Handshake in center */}
+                <div className="flex items-center justify-center w-full h-full p-4">
+                  <div className="relative">
+                    <div className="bg-gradient-to-r from-primary-600 to-primary-800 w-32 h-32 rounded-full flex items-center justify-center shadow-lg transform transition-all duration-500 hover:scale-110">
+                      <HandshakeIcon className="h-16 w-16 text-white" />
                     </div>
+                    
+                    {/* Extra animated rings */}
+                    <div className="absolute inset-0 border-4 border-pink-200 rounded-full animate-ping" style={{ animationDuration: '3s' }}></div>
+                    <div className="absolute inset-0 border-2 border-pink-300 rounded-full animate-ping" style={{ animationDuration: '2s', animationDelay: '0.5s' }}></div>
                   </div>
                 </div>
               </div>
