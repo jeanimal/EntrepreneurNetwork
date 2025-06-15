@@ -195,3 +195,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For support and questions, please open an issue in the GitHub repository.
+
+
+## Notes
+
+Vibe-coded with Replit.
+
+Might be running at:
+https://entrepreneur-network-jeanimal.replit.app/
